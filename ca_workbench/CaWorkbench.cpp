@@ -93,27 +93,26 @@ void CaWorkbench::initShaders()
 		"\n"
 		"layout (location = 0) in vec2 position;\n"
 		"layout (location = 1) in vec2 offset;\n"
-		"layout (location = 2) in vec3 color;\n"
+		"layout (location = 2) in vec3 inColor;\n"
 		"\n"
-		"out vec3 myColor;\n"
+		"out vec3 fragShaderColor;\n"
 		"\n"
 		"void main()\n"
 		"{\n"
 		"    gl_Position = vec4(((position.x + offset.x) * 2.0) - 1.0, ((position.y + offset.y) * 2.0) - 1.0, 0.0, 1.0);\n"
-//		"    myColor = vec3(1.0, 0.5, 0.1);\n"
-		"    myColor = color;\n"
+		"    fragShaderColor = inColor;\n"
 		"}\n";
 
 	// cell fragment shader
 	string cellFragmentShaderSource =
 		"#version 330 core\n"
 		"\n"
-		"in vec3 myColor;\n"
+		"in vec3 fragShaderColor;\n"
 		"out vec4 color;\n"
 		"\n"
 		"void main()\n"
 		"{\n"
-		"    color = vec4(myColor, 1.0f);\n"
+		"    color = vec4(fragShaderColor, 1.0f);\n"
 		"}\n\0";
 	
 	cellShaderProg = OglShaderProgram();
@@ -295,12 +294,11 @@ void CaWorkbench::updateCellStates()
 	//bool** cellStates = sca->getCellStates();
 	bool** cellStates = rbn->getCellStates();
 
-	// setup translation and color vectors
-	int translationIndex = 0;
+	// setup cell translation and color vertex data
+	int vertixIndex = 0;
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
 	GLfloat vertexData[rows * cols * 5]; // total of (rows * cols) cells, each having a 2 coordinate translation and a 3 value color (2 + 3 = 5)
-	//glm::vec2 translations[rows * cols];
 	for (unsigned int r = 0; r < rows; r++) {
 		for (unsigned int c = 0; c < cols; c++) {
 			unsigned int row = rows - r - 1;
@@ -308,43 +306,37 @@ void CaWorkbench::updateCellStates()
 			// translation
 			GLfloat transX;
 			GLfloat transY;
-			//glm::vec2 translation;
 			if (cellStates[r][c]) {
 				// translate logical cell location to world space
-				//translation.x = c * xInc;
-				//translation.y = row * yInc;
 				transX = c * xInc;
 				transY = row * yInc;
 			}
 			else {
 				// cell is inactive, render off screen
-				//translation.x = -1.0f;
-				//translation.y = -1.0f;
 				transX = -1.0f;
 				transY = -1.0f;
 			}
-			//translations[translationIndex++] = translation;
-			vertexData[translationIndex++] = transX;
-			vertexData[translationIndex++] = transY;
+			vertexData[vertixIndex++] = transX;
+			vertexData[vertixIndex++] = transY;
 
 			// color
 			if(r % 2 == 0){
-				vertexData[translationIndex++] = 0.0f;
-				vertexData[translationIndex++] = 0.0f;
-				vertexData[translationIndex++] = 1.0f;
+				vertexData[vertixIndex++] = 0.0f;
+				vertexData[vertixIndex++] = 0.0f;
+				vertexData[vertixIndex++] = 1.0f;
 			}
 			else {
-				vertexData[translationIndex++] = 0.0f;
-				vertexData[translationIndex++] = 1.0f;
-				vertexData[translationIndex++] = 0.0f;
+				vertexData[vertixIndex++] = 0.0f;
+				vertexData[vertixIndex++] = 1.0f;
+				vertexData[vertixIndex++] = 0.0f;
 			}
 
 		}
 	}
 
+	// buffer translation and color vertex data
 	glGenBuffers(1, &cellTranslationVbo);
 	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * rows * cols, &translations[0], GL_STATIC_DRAW);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -357,7 +349,6 @@ void CaWorkbench::updateCellStates()
 		xInc, yInc,  // right triangle top right
 		xInc, 0.0f   // right triangle bottom right
 	};
-
 	glGenVertexArrays(1, &cellStatesVao);
 	glGenBuffers(1, &cellStatesVbo);
 	glBindVertexArray(cellStatesVao);
@@ -370,17 +361,18 @@ void CaWorkbench::updateCellStates()
 
 	// define offset attribute (instanced)
 	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(1, 1);
 
 	// define color attribute (instanced)
 	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
+	glVertexAttribDivisor(2, 1);
 
+	// unbinds for safety
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glVertexAttribDivisor(1, 1);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

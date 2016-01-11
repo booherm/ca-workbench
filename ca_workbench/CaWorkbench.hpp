@@ -18,8 +18,8 @@ const GLuint GL_WINDOW_HEIGHT = 900;
 //const unsigned int cols = 400;
 //const unsigned int rows = 200;  // max around 200x300 for RBN
 //const unsigned int cols = 300;
-const unsigned int rows = 4;
-const unsigned int cols = 8;
+const unsigned int rows = 50;
+const unsigned int cols = 100;
 const GLuint cellStatesVertexCount = rows * cols * 6;
 
 class CaWorkbench {
@@ -41,7 +41,7 @@ private:
 	GLuint cellTranslationVbo = 0;
 	OglShaderProgram gridShaderProg;
 	OglShaderProgram cellShaderProg;
-	
+
 	// CA variables
 	bool renderComplete = false;
 	//Wolfram1DCA* wca;
