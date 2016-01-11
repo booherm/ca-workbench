@@ -153,6 +153,7 @@
     <ClCompile Include="OglShaderProgram.cpp" />
     <ClCompile Include="RandomBooleanNetwork.cpp" />
     <ClCompile Include="Simplified1DCA.cpp" />
+    <ClCompile Include="Util.cpp" />
     <ClCompile Include="Wolfram1DCA.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -160,6 +161,7 @@
     <ClInclude Include="OglShaderProgram.hpp" />
     <ClInclude Include="RandomBooleanNetwork.hpp" />
     <ClInclude Include="Simplified1DCA.hpp" />
+    <ClInclude Include="Util.hpp" />
     <ClInclude Include="Wolfram1DCA.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

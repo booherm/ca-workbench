@@ -51,9 +51,14 @@ void CaWorkbench::initGlWindow()
 	//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	
+
 	glCullFace(GL_FRONT);
 	glEnable(GL_CULL_FACE);
+
+	if (pointMode) {
+		glPointSize(GL_WINDOW_WIDTH / cols);
+	}
+
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 }
 
@@ -70,7 +75,7 @@ void CaWorkbench::initShaders()
 		"{\n"
 		"    gl_Position = vec4(((position.x + offset.x) * 2.0) - 1.0, ((position.y + offset.y) * 2.0) - 1.0, 0.0, 1.0);\n"
 		"}\n";
-	
+
 	// grid fragment shader
 	string gridFragmentShaderSource =
 		"#version 330 core\n"
@@ -81,7 +86,7 @@ void CaWorkbench::initShaders()
 		"{\n"
 		"    color = vec4(0.75f, 0.75f, 0.75f, 1.0f);\n"
 		"}\n";
-	
+
 	gridShaderProg = OglShaderProgram();
 	gridShaderProg.createVertexShaderFromSourceString(gridVertexShaderSource);
 	gridShaderProg.createFragmentShaderFromSourceString(gridFragmentShaderSource);
@@ -114,7 +119,7 @@ void CaWorkbench::initShaders()
 		"{\n"
 		"    color = vec4(fragShaderColor, 1.0f);\n"
 		"}\n\0";
-	
+
 	cellShaderProg = OglShaderProgram();
 	cellShaderProg.createVertexShaderFromSourceString(cellVertexShaderSource);
 	cellShaderProg.createFragmentShaderFromSourceString(cellFragmentShaderSource);
@@ -139,7 +144,11 @@ void CaWorkbench::doRenderLoop()
 		glfwPollEvents();
 
 		updateCellStates();
+
+		uint64 renderStartTime = getSystemTimeMillis();
 		updateRenderState();
+		uint64 renderEndTime = getSystemTimeMillis();
+		cout << "Render state updated in " << (renderEndTime - renderStartTime) << endl;
 
 		if (renderComplete) {
 			rbn->resetCellStates();
@@ -150,11 +159,11 @@ void CaWorkbench::doRenderLoop()
 
 			//string filename = "c:\\2\\rule_" + to_string(currentRuleNumber) + ".bmp";
 			//cout << "filename = " << filename << endl;
-			
+
 			//int save_result = SOIL_save_screenshot(
-				//filename.c_str(),
-				//SOIL_SAVE_TYPE_BMP,
-				//0, 0, GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT
+			//filename.c_str(),
+			//SOIL_SAVE_TYPE_BMP,
+			//0, 0, GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT
 			//);
 
 			//wca->setActiveRuleNumber((currentRuleNumber + 1) % 256);
@@ -164,7 +173,7 @@ void CaWorkbench::doRenderLoop()
 			rbn->resetCellStates();
 			*/
 			renderComplete = false;
-			
+
 		}
 	}
 
@@ -196,7 +205,7 @@ void CaWorkbench::initGridGeometry()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// vertical grid line vertices
-	GLfloat verticalLineVertices[] = {0.0f, 0.0f, 0.0f, 1.0f};
+	GLfloat verticalLineVertices[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	glGenVertexArrays(1, &vertGridVao);
 	glGenBuffers(1, &vertGridVbo);
 	glBindVertexArray(vertGridVao);
@@ -268,7 +277,10 @@ void CaWorkbench::updateRenderState()
 	// draw cell states
 	cellShaderProg.use();
 	glBindVertexArray(cellStatesVao);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
+	if (pointMode)
+		glDrawArraysInstanced(GL_POINTS, 0, 1, rows * cols);
+	else
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
 
 	// unbinds for safety
 	glBindVertexArray(0);
@@ -303,7 +315,7 @@ void CaWorkbench::updateCellStates()
 			unsigned int row = rows - r - 1;
 
 			Site s = *siteIterator;
-			
+
 			// translation
 			GLfloat transX;
 			GLfloat transY;
@@ -337,15 +349,23 @@ void CaWorkbench::updateCellStates()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertexDataElements, vertexData.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	/* as triangels
 	// cell quad vertices
 	GLfloat cellQuadVertices[] = {
-		0.0f, 0.0f,  // left triangle bottom left
-		0.0f, yInc,  // left triangle top left
-		xInc, yInc,  // left triangle top right
-		0.0f, 0.0f,  // right triangle bottom left
-		xInc, yInc,  // right triangle top right
-		xInc, 0.0f   // right triangle bottom right
+	0.0f, 0.0f,  // left triangle bottom left
+	0.0f, yInc,  // left triangle top left
+	xInc, yInc,  // left triangle top right
+	0.0f, 0.0f,  // right triangle bottom left
+	xInc, yInc,  // right triangle top right
+	xInc, 0.0f   // right triangle bottom right
 	};
+	*/
+
+	// as points
+	GLfloat cellQuadVertices[] = {
+		xInc / 2.0f, yInc / 2.0f
+	};
+
 	glGenVertexArrays(1, &cellStatesVao);
 	glGenBuffers(1, &cellStatesVbo);
 	glBindVertexArray(cellStatesVao);
