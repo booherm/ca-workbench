@@ -56,7 +56,21 @@ void RandomBooleanNetwork::resetCellStates()
 		s.workingState = false;
 
 		s.color.resize(3);
-		if (i >= externalInputRowCount * cols) {
+		if (i < externalInputRowCount * cols) {  // external input site, blue, no boolean function
+			s.color[0] = 0.0f;
+			s.color[1] = 0.0f;
+			s.color[2] = 1.0f;
+		}
+		else if (i >= siteCount - (externalOutputRowCount * cols)) { // external output site, red
+		   // choose random boolean function
+			s.booleanFunctionId = randBooleanFunctionDist(rnGen);
+
+			// color red
+			s.color[0] = 1.0f;
+			s.color[1] = 0.0f;
+			s.color[2] = 0.0f;
+		}
+		else {
 			// choose random boolean function
 			s.booleanFunctionId = randBooleanFunctionDist(rnGen);
 
@@ -64,12 +78,6 @@ void RandomBooleanNetwork::resetCellStates()
 			s.color[0] = 0.0f;
 			s.color[1] = 0.0f;
 			s.color[2] = 0.0f;
-		}
-		else {
-			// external input site, color blue
-			s.color[0] = 0.0f;
-			s.color[1] = 0.0f;
-			s.color[2] = 1.0f;
 		}
 
 		sites[i] = s;
@@ -80,7 +88,7 @@ void RandomBooleanNetwork::resetCellStates()
 		// neighbor connectivity
 		if (connectivity <= 4) // von Neumann (k <= 4)
 		{
-			for (unsigned int i = externalInputRowCount * cols; i < siteCount - (externalOutputRowCount * cols); i++) {
+			for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 				//cout << "processing site " << std::to_string(i) << endl;
 				Site* s = &sites[i];
 
@@ -91,7 +99,7 @@ void RandomBooleanNetwork::resetCellStates()
 				unsigned int neighborC;
 				std::unordered_set<unsigned int> bag;
 				// above
-				neighborR = thisSiteR == externalInputRowCount ? rows - 1 - externalOutputRowCount : thisSiteR - 1;
+				neighborR = thisSiteR == externalInputRowCount ? rows - 1 : thisSiteR - 1;
 				neighborC = thisSiteC;
 				bag.insert((neighborR * cols) + neighborC);
 				// right
@@ -99,7 +107,7 @@ void RandomBooleanNetwork::resetCellStates()
 				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
 				bag.insert((neighborR * cols) + neighborC);
 				// below
-				neighborR = thisSiteR == rows - 1 - externalOutputRowCount ? externalInputRowCount : thisSiteR + 1;
+				neighborR = thisSiteR == rows - 1 ? externalInputRowCount : thisSiteR + 1;
 				neighborC = thisSiteC;
 				bag.insert((neighborR * cols) + neighborC);
 				// left
@@ -130,7 +138,7 @@ void RandomBooleanNetwork::resetCellStates()
 	else
 	{
 		// initialize site connectivity, arbitrary sites
-		uniform_int_distribution<unsigned int> randInputDist(0, siteCount - 1 - (externalOutputRowCount * cols));
+		uniform_int_distribution<unsigned int> randInputDist(0, siteCount);
 		for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 			Site* s = &sites[i];
 
@@ -174,7 +182,7 @@ bool RandomBooleanNetwork::iterate()
 {
 	// update logical state
 	//cout << "begin iteration " << std::to_string(iteration) << endl;
-	for (unsigned int i = externalInputRowCount * cols; i < sites.size() - (externalOutputRowCount * cols); i++) {
+	for (unsigned int i = externalInputRowCount * cols; i < sites.size(); i++) {
 		Site* s = &sites[i];
 
 		// build inputs up into a single byte
@@ -197,7 +205,7 @@ bool RandomBooleanNetwork::iterate()
 	}
 
 	// push working state to new current state
-	for (unsigned int i = externalInputRowCount * cols; i < sites.size() - (externalOutputRowCount * cols); i++) {
+	for (unsigned int i = externalInputRowCount * cols; i < sites.size(); i++) {
 		Site* s = &sites[i];
 		s->currentState = s->workingState;
 	}

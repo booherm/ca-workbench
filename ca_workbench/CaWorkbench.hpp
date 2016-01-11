@@ -14,12 +14,8 @@
 
 const GLuint GL_WINDOW_WIDTH = 1800;
 const GLuint GL_WINDOW_HEIGHT = 900;
-//const unsigned int rows = 200;
-//const unsigned int cols = 400;
-//const unsigned int rows = 200;  // max around 200x300 for RBN
-//const unsigned int cols = 300;
-const unsigned int rows = 50;
-const unsigned int cols = 100;
+const unsigned int rows = 100;
+const unsigned int cols = 200;
 const GLuint cellStatesVertexCount = rows * cols * 6;
 
 class CaWorkbench {

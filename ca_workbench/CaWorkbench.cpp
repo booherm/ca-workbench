@@ -8,9 +8,7 @@ CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	//wca = new Wolfram1DCA(rows, cols);
-	//sca = new Simplified1DCA(rows, cols);
-	rbn = new RandomBooleanNetwork(rows, cols, 2, 1, 0, false);
+	rbn = new RandomBooleanNetwork(rows, cols, 2, 10, 10, false);
 	theRbn = rbn;
 }
 
@@ -54,6 +52,8 @@ void CaWorkbench::initGlWindow()
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
+	glCullFace(GL_FRONT);
+	glEnable(GL_CULL_FACE);
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 }
 
@@ -285,14 +285,9 @@ void CaWorkbench::updateRenderState()
 void CaWorkbench::updateCellStates()
 {
 	// iterate logical state
-	//renderComplete = wca->iterate();
-	//renderComplete = sca->iterate();
 	renderComplete = rbn->iterate();
 
 	// update rendering data from logical data
-	//bool** cellStates = wca->getCellStates();
-	//bool** cellStates = sca->getCellStates();
-	//bool** cellStates = rbn->getCellStates();
 	std::vector<Site>* sites = rbn->getSites();
 	std::vector<Site>::iterator siteIterator = sites->begin();
 
@@ -300,7 +295,9 @@ void CaWorkbench::updateCellStates()
 	int vertexIndex = 0;
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
-	GLfloat vertexData[rows * cols * 5]; // total of (rows * cols) cells, each having a 2 coordinate translation and a 3 value color (2 + 3 = 5)
+
+	unsigned int vertexDataElements = rows * cols * 5; // 2 floats for translation + 3 floats for color = 5
+	std::vector<GLfloat> vertexData(vertexDataElements);
 	for (unsigned int r = 0; r < rows; r++) {
 		for (unsigned int c = 0; c < cols; c++) {
 			unsigned int row = rows - r - 1;
@@ -310,7 +307,7 @@ void CaWorkbench::updateCellStates()
 			// translation
 			GLfloat transX;
 			GLfloat transY;
-			if (s.currentState) { //cellStates[r][c]) {
+			if (s.currentState) {
 				// translate logical cell location to world space
 				transX = c * xInc;
 				transY = row * yInc;
@@ -336,7 +333,8 @@ void CaWorkbench::updateCellStates()
 	// buffer translation and color vertex data
 	glGenBuffers(1, &cellTranslationVbo);
 	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertexDataElements, vertexData.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// cell quad vertices
@@ -378,7 +376,5 @@ void CaWorkbench::updateCellStates()
 
 CaWorkbench::~CaWorkbench()
 {
-	//delete wca;
-	//delete sca;
 	delete rbn;
 }
