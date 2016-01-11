@@ -31,10 +31,6 @@ void RandomBooleanNetwork::updateInputSites()
 	for (unsigned int i = 0; i < externalInputRowCount * cols; i++) {
 		Site* s = &sites[i];
 		s->currentState = initialStateRandomDist(rnGen);
-
-		unsigned int r = i / cols;
-		unsigned int c = i - (r * cols);
-		cellStates[r][c] = s->currentState;
 	}
 }
 
@@ -59,9 +55,21 @@ void RandomBooleanNetwork::resetCellStates()
 		s.currentState = initialStateRandomDist(rnGen);
 		s.workingState = false;
 
+		s.color.resize(3);
 		if (i >= externalInputRowCount * cols) {
 			// choose random boolean function
 			s.booleanFunctionId = randBooleanFunctionDist(rnGen);
+
+			// color black
+			s.color[0] = 0.0f;
+			s.color[1] = 0.0f;
+			s.color[2] = 0.0f;
+		}
+		else {
+			// external input site, color blue
+			s.color[0] = 0.0f;
+			s.color[1] = 0.0f;
+			s.color[2] = 1.0f;
 		}
 
 		sites[i] = s;
@@ -160,16 +168,6 @@ void RandomBooleanNetwork::resetCellStates()
 		cout << std::to_string(siteCrc32(s)) << endl;
 	}
 	*/
-
-	// initialize cell states
-	cellStates = new bool*[rows];
-	for (unsigned int i = 0; i < rows; i++) {
-		cellStates[i] = new bool[cols];
-
-		for (unsigned int j = 0; j < cols; j++)
-			cellStates[i][j] = sites[(i * cols) + j].currentState;
-	}
-	
 }
 
 bool RandomBooleanNetwork::iterate()
@@ -196,9 +194,6 @@ bool RandomBooleanNetwork::iterate()
 
 		// update working state
 		s->workingState = newState;
-		unsigned int r = i / cols;
-		unsigned int c = i - (r * cols);
-		cellStates[r][c] = newState;
 	}
 
 	// push working state to new current state
@@ -207,16 +202,16 @@ bool RandomBooleanNetwork::iterate()
 		s->currentState = s->workingState;
 	}
 
-	cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(getSitesCrc32()) << endl;
+//	cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(getSitesCrc32()) << endl;
 	iteration++;
 
 
 	return iteration == 1000 ? true : false;
 }
 
-bool** RandomBooleanNetwork::getCellStates()
+std::vector<Site>* RandomBooleanNetwork::getSites()
 {
-	return cellStates;
+	return &sites;
 }
 
 unsigned int RandomBooleanNetwork::getSitesCrc32() {
@@ -240,9 +235,6 @@ void RandomBooleanNetwork::cleanUp()
 {
 	if (initialized) {
 		sites.clear();
-		for (unsigned int i = 0; i < rows; i++)
-			delete[] cellStates[i];
-		delete[] cellStates;
 	}
 }
 

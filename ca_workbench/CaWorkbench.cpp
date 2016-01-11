@@ -292,10 +292,12 @@ void CaWorkbench::updateCellStates()
 	// update rendering data from logical data
 	//bool** cellStates = wca->getCellStates();
 	//bool** cellStates = sca->getCellStates();
-	bool** cellStates = rbn->getCellStates();
+	//bool** cellStates = rbn->getCellStates();
+	std::vector<Site>* sites = rbn->getSites();
+	std::vector<Site>::iterator siteIterator = sites->begin();
 
 	// setup cell translation and color vertex data
-	int vertixIndex = 0;
+	int vertexIndex = 0;
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
 	GLfloat vertexData[rows * cols * 5]; // total of (rows * cols) cells, each having a 2 coordinate translation and a 3 value color (2 + 3 = 5)
@@ -303,10 +305,12 @@ void CaWorkbench::updateCellStates()
 		for (unsigned int c = 0; c < cols; c++) {
 			unsigned int row = rows - r - 1;
 
+			Site s = *siteIterator;
+			
 			// translation
 			GLfloat transX;
 			GLfloat transY;
-			if (cellStates[r][c]) {
+			if (s.currentState) { //cellStates[r][c]) {
 				// translate logical cell location to world space
 				transX = c * xInc;
 				transY = row * yInc;
@@ -316,21 +320,16 @@ void CaWorkbench::updateCellStates()
 				transX = -1.0f;
 				transY = -1.0f;
 			}
-			vertexData[vertixIndex++] = transX;
-			vertexData[vertixIndex++] = transY;
+			vertexData[vertexIndex++] = transX;
+			vertexData[vertexIndex++] = transY;
 
 			// color
-			if(r % 2 == 0){
-				vertexData[vertixIndex++] = 0.0f;
-				vertexData[vertixIndex++] = 0.0f;
-				vertexData[vertixIndex++] = 1.0f;
-			}
-			else {
-				vertexData[vertixIndex++] = 0.0f;
-				vertexData[vertixIndex++] = 1.0f;
-				vertexData[vertixIndex++] = 0.0f;
-			}
+			std::vector<float>* color = &s.color;
+			vertexData[vertexIndex++] = color->at(0);
+			vertexData[vertexIndex++] = color->at(1);
+			vertexData[vertexIndex++] = color->at(2);
 
+			siteIterator++;
 		}
 	}
 

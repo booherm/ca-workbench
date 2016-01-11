@@ -15,6 +15,7 @@ struct Site {
 	unsigned int booleanFunctionId;
 	std::vector<unsigned int> inputSiteIds;
 	std::vector<unsigned int> outputSiteIds;
+	std::vector<float> color;
 };
 
 const size_t SIZE_SITE_ID = sizeof(Site::siteId);
@@ -36,13 +37,11 @@ public:
 	void resetCellStates();
 	void updateInputSites();
 	bool iterate();
-	bool** getCellStates();
+	std::vector<Site>* getSites();
 	~RandomBooleanNetwork();
 
 private:
 	bool initialized;
-	bool** cellStates;
-
 	std::vector<Site> sites;
 	std::default_random_engine rnGen;
 
