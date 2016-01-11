@@ -13,8 +13,8 @@
 
 const GLuint GL_WINDOW_WIDTH = 1800;
 const GLuint GL_WINDOW_HEIGHT = 900;
-const unsigned int rows = 100;
-const unsigned int cols = 200;
+const unsigned int rows = 200;
+const unsigned int cols = 400;
 const GLuint cellStatesVertexCount = rows * cols * 6;
 
 class CaWorkbench {
@@ -36,14 +36,18 @@ private:
 	GLuint cellTranslationVbo = 0;
 	OglShaderProgram gridShaderProg;
 	OglShaderProgram cellShaderProg;
-	bool pointMode = true;
+	bool pointMode = false;
 
 	// CA variables
 	bool renderComplete = false;
-	//Wolfram1DCA* wca;
-	//Simplified1DCA* sca;
 	RandomBooleanNetwork* rbn;
 	static RandomBooleanNetwork* theRbn;
+	unsigned int vertexDataElements = rows * cols * 5; // 2 floats for translation + 3 floats for color = 5
+	GLfloat xInc = 1.0f / cols;
+	GLfloat yInc = 1.0f / rows;
+	std::vector<GLfloat> vertexData;
+	GLfloat cellQuadVertices[12];
+	GLfloat cellPointVertices[2];
 
 	// member functions
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);

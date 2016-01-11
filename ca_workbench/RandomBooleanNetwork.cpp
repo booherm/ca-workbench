@@ -182,7 +182,10 @@ bool RandomBooleanNetwork::iterate()
 {
 	// update logical state
 	//cout << "begin iteration " << std::to_string(iteration) << endl;
-	for (unsigned int i = externalInputRowCount * cols; i < sites.size(); i++) {
+	
+	unsigned int siteCount = sites.size();
+
+	for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 		Site* s = &sites[i];
 
 		// build inputs up into a single byte
@@ -205,7 +208,7 @@ bool RandomBooleanNetwork::iterate()
 	}
 
 	// push working state to new current state
-	for (unsigned int i = externalInputRowCount * cols; i < sites.size(); i++) {
+	for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 		Site* s = &sites[i];
 		s->currentState = s->workingState;
 	}
@@ -214,7 +217,8 @@ bool RandomBooleanNetwork::iterate()
 	iteration++;
 
 
-	return iteration == 1000 ? true : false;
+	
+	return iteration == 100 ? true : false;
 }
 
 std::vector<Site>* RandomBooleanNetwork::getSites()

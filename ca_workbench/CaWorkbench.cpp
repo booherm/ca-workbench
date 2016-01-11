@@ -10,6 +10,26 @@ CaWorkbench::CaWorkbench()
 	initShaders();
 	rbn = new RandomBooleanNetwork(rows, cols, 2, 10, 10, false);
 	theRbn = rbn;
+	
+	vertexData.resize(vertexDataElements);
+
+	// cell quad vertices for drawing as triangles
+	cellQuadVertices[0] = 0.0f;
+	cellQuadVertices[1] = 0.0f;  // left triangle bottom left
+	cellQuadVertices[2] = 0.0f;
+	cellQuadVertices[3] = yInc;  // left triangle top left
+	cellQuadVertices[4] = xInc;
+	cellQuadVertices[5] = yInc;  // left triangle top right
+	cellQuadVertices[6] = 0.0f;
+	cellQuadVertices[7] = 0.0f;  // right triangle bottom left
+	cellQuadVertices[8] = xInc;
+	cellQuadVertices[9] = yInc;  // right triangle top right
+	cellQuadVertices[10] = xInc;
+	cellQuadVertices[11] = 0.0f;  // right triangle bottom right
+
+	// point vertices for drawing as points
+	cellPointVertices[0] = xInc / 2.0f;
+	cellPointVertices[1] = yInc / 2.0f;
 }
 
 void CaWorkbench::initGlWindow()
@@ -143,12 +163,8 @@ void CaWorkbench::doRenderLoop()
 	while (!glfwWindowShouldClose(glWindow)) {
 		glfwPollEvents();
 
-		updateCellStates();
-
-		uint64 renderStartTime = getSystemTimeMillis();
-		updateRenderState();
-		uint64 renderEndTime = getSystemTimeMillis();
-		cout << "Render state updated in " << (renderEndTime - renderStartTime) << endl;
+		updateCellStates();  // consistent time in regards to point vs. quad, slows as grid size increases
+		updateRenderState();  // pretty consistent 1ms regardless of point vs. quad, size of grid
 
 		if (renderComplete) {
 			rbn->resetCellStates();
@@ -297,7 +313,14 @@ void CaWorkbench::updateRenderState()
 void CaWorkbench::updateCellStates()
 {
 	// iterate logical state
+	//std::string sectionTimeString;
+	//UINT64 sectionTimeStart = getSystemTimeNanos();
 	renderComplete = rbn->iterate();
+	//uint64ToString(getSystemTimeNanos() - sectionTimeStart, sectionTimeString);
+	//cout << "RBN logical state updated in " << sectionTimeString << "ns" << endl;
+
+	//std::string sectionTimeString2;
+	//UINT64 sectionTimeStart2 = getSystemTimeNanos();
 
 	// update rendering data from logical data
 	std::vector<Site>* sites = rbn->getSites();
@@ -305,21 +328,16 @@ void CaWorkbench::updateCellStates()
 
 	// setup cell translation and color vertex data
 	int vertexIndex = 0;
-	GLfloat xInc = 1.0f / cols;
-	GLfloat yInc = 1.0f / rows;
-
-	unsigned int vertexDataElements = rows * cols * 5; // 2 floats for translation + 3 floats for color = 5
-	std::vector<GLfloat> vertexData(vertexDataElements);
 	for (unsigned int r = 0; r < rows; r++) {
 		for (unsigned int c = 0; c < cols; c++) {
 			unsigned int row = rows - r - 1;
 
-			Site s = *siteIterator;
+			Site* s = &*siteIterator;
 
 			// translation
 			GLfloat transX;
 			GLfloat transY;
-			if (s.currentState) {
+			if (s->currentState) {
 				// translate logical cell location to world space
 				transX = c * xInc;
 				transY = row * yInc;
@@ -333,7 +351,7 @@ void CaWorkbench::updateCellStates()
 			vertexData[vertexIndex++] = transY;
 
 			// color
-			std::vector<float>* color = &s.color;
+			std::vector<float>* color = &s->color;
 			vertexData[vertexIndex++] = color->at(0);
 			vertexData[vertexIndex++] = color->at(1);
 			vertexData[vertexIndex++] = color->at(2);
@@ -349,28 +367,14 @@ void CaWorkbench::updateCellStates()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertexDataElements, vertexData.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	/* as triangels
-	// cell quad vertices
-	GLfloat cellQuadVertices[] = {
-	0.0f, 0.0f,  // left triangle bottom left
-	0.0f, yInc,  // left triangle top left
-	xInc, yInc,  // left triangle top right
-	0.0f, 0.0f,  // right triangle bottom left
-	xInc, yInc,  // right triangle top right
-	xInc, 0.0f   // right triangle bottom right
-	};
-	*/
-
-	// as points
-	GLfloat cellQuadVertices[] = {
-		xInc / 2.0f, yInc / 2.0f
-	};
-
 	glGenVertexArrays(1, &cellStatesVao);
 	glGenBuffers(1, &cellStatesVbo);
 	glBindVertexArray(cellStatesVao);
 	glBindBuffer(GL_ARRAY_BUFFER, cellStatesVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cellQuadVertices), cellQuadVertices, GL_STATIC_DRAW);
+	if(pointMode)
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cellPointVertices), cellPointVertices, GL_STATIC_DRAW);
+	else
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cellQuadVertices), cellQuadVertices, GL_STATIC_DRAW);
 
 	// define position attribute
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
@@ -392,6 +396,9 @@ void CaWorkbench::updateCellStates()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//uint64ToString(getSystemTimeNanos() - sectionTimeStart2, sectionTimeString2);
+	//cout << "render data state updated in " << sectionTimeString2 << "ns" << endl;
 }
 
 CaWorkbench::~CaWorkbench()

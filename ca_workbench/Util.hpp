@@ -2,9 +2,9 @@
 #define UTIL_HPP
 
 #include <Windows.h>
+#include <string>
 
-typedef unsigned long long uint64;
-
-uint64 getSystemTimeMillis();
+UINT64 getSystemTimeNanos();
+void uint64ToString(UINT64 value, std::string& result);
 
 #endif

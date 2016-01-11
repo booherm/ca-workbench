@@ -1,6 +1,6 @@
 #include "Util.hpp"
 
-uint64 getSystemTimeMillis()
+UINT64 getSystemTimeNanos()
 {
 	FILETIME ft;
 	LARGE_INTEGER li;
@@ -11,9 +11,19 @@ uint64 getSystemTimeMillis()
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
 
-	uint64 ret = li.QuadPart;
+	UINT64 ret = li.QuadPart;
 	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
-	ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
 
 	return ret;
+}
+
+void uint64ToString(UINT64 value, std::string& result) {
+	result.clear();
+	result.reserve(20); // max. 20 digits possible
+	UINT64 q = value;
+	do {
+		result += "0123456789"[q % 10];
+		q /= 10;
+	} while (q);
+	std::reverse(result.begin(), result.end());
 }
