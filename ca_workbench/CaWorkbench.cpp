@@ -3,13 +3,15 @@
 using namespace std;
 
 RandomBooleanNetwork* CaWorkbench::theRbn;
+CaWorkbench* CaWorkbench::theCaWorkbench;
 
 CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	rbn = new RandomBooleanNetwork(rows, cols, 3, 5, 20, 20, false);
+	rbn = new RandomBooleanNetwork(rows, cols, 3, 84, 20, 20, false, true);
 	theRbn = rbn;
+	theCaWorkbench = this;
 	
 	vertexData.resize(vertexDataElements);
 
@@ -162,6 +164,15 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 			case GLFW_KEY_F:
 				theRbn->feedForward();
 				break;
+			case GLFW_KEY_T:
+				theRbn->toggleAutoFeedForward();
+				break;
+			case GLFW_KEY_A:
+				theRbn->toggleAutoNewInput();
+				break;
+			case GLFW_KEY_G:
+				theCaWorkbench->toggleGridLines();
+				break;
 			case GLFW_KEY_UP:
 				theRbn->setConnectivity(theRbn->getConnectivity() + 1);
 				break;
@@ -174,11 +185,29 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 			case GLFW_KEY_RIGHT:
 				theRbn->setNeighborhoodConnections(true);
 				break;
-			case GLFW_KEY_KP_4:
+			case GLFW_KEY_KP_1:
 				theRbn->decrementExternalInputRows();
 				break;
-			case GLFW_KEY_KP_6:
+			case GLFW_KEY_KP_7:
 				theRbn->incrementExternalInputRows();
+				break;
+			case GLFW_KEY_KP_2:
+				theRbn->decrementFeedbackInputRows();
+				break;
+			case GLFW_KEY_KP_8:
+				theRbn->incrementFeedbackInputRows();
+				break;
+			case GLFW_KEY_KP_3:
+				theRbn->decrementExternalOutputRows();
+				break;
+			case GLFW_KEY_KP_9:
+				theRbn->incrementExternalOutputRows();
+				break;
+			case GLFW_KEY_INSERT:
+				theRbn->shiftInputData(0);
+				break;
+			case GLFW_KEY_PRINT_SCREEN:
+				theCaWorkbench->screenShot();
 				break;
 		}
 	}
@@ -191,34 +220,12 @@ void CaWorkbench::doRenderLoop()
 	while (!glfwWindowShouldClose(glWindow)) {
 		glfwPollEvents();
 
-		updateCellStates();  // consistent time in regards to point vs. quad, slows as grid size increases
+		updateCellStates();   // consistent time in regards to point vs. quad, slows as grid size increases
 		updateRenderState();  // pretty consistent 1ms regardless of point vs. quad, size of grid
 
 		if (renderComplete) {
-			//rbn->resetCellStates();
 			rbn->updateInputSites();
-			/*
-			//unsigned int currentRuleNumber = wca->getActiveRuleNumber();
-			unsigned int currentRuleNumber = rbn->getActiveRuleNumber();
-			cout << "rendering complete for rule " << currentRuleNumber << endl;
-
-			//string filename = "c:\\2\\rule_" + to_string(currentRuleNumber) + ".bmp";
-			//cout << "filename = " << filename << endl;
-
-			//int save_result = SOIL_save_screenshot(
-			//filename.c_str(),
-			//SOIL_SAVE_TYPE_BMP,
-			//0, 0, GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT
-			//);
-
-			//wca->setActiveRuleNumber((currentRuleNumber + 1) % 256);
-			//wca->resetCellStates();
-
-			rbn->setActiveRuleNumber((currentRuleNumber + 1) % 4);
-			rbn->resetCellStates();
-			*/
 			renderComplete = false;
-
 		}
 	}
 
@@ -312,13 +319,6 @@ void CaWorkbench::updateRenderState()
 	// clear current frame
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// draw grid
-	gridShaderProg.use();
-	glBindVertexArray(vertGridVao);
-	glDrawArraysInstanced(GL_LINES, 0, 2, cols);
-	glBindVertexArray(horzGridVao);
-	glDrawArraysInstanced(GL_LINES, 0, 2, rows);
-
 	// draw cell states
 	cellShaderProg.use();
 	glBindVertexArray(cellStatesVao);
@@ -326,6 +326,15 @@ void CaWorkbench::updateRenderState()
 		glDrawArraysInstanced(GL_POINTS, 0, 1, rows * cols);
 	else
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
+
+	// draw grid
+	if(gridLinesOn){
+		gridShaderProg.use();
+		glBindVertexArray(vertGridVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, cols);
+		glBindVertexArray(horzGridVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, rows);
+	}
 
 	// unbinds for safety
 	glBindVertexArray(0);
@@ -428,6 +437,29 @@ void CaWorkbench::updateCellStates()
 
 	//uint64ToString(getSystemTimeNanos() - sectionTimeStart2, sectionTimeString2);
 	//cout << "render data state updated in " << sectionTimeString2 << "ns" << endl;
+}
+
+void CaWorkbench::toggleGridLines() {
+	cout << "setting grid lines " << (gridLinesOn ? "off" : "on") << endl;
+	gridLinesOn = !gridLinesOn;
+}
+
+void CaWorkbench::screenShot() {
+
+	string id = std::to_string(screenShotId++);
+	lPad(id, 5, '0');
+	string filename = SCREENSHOT_SAVE_DIRECTORY + id + ".bmp";
+
+	cout << "Saving screenshot to " << filename << endl;
+
+	int saveResult = SOIL_save_screenshot(
+		filename.c_str(),
+		SOIL_SAVE_TYPE_BMP,
+		0, 0, GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT
+	);
+
+	if(saveResult != 1)
+		cout << "unkown error saving screenshot" << endl;
 }
 
 CaWorkbench::~CaWorkbench()

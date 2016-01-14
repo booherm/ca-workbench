@@ -17,6 +17,7 @@ struct Site {
 	std::vector<unsigned int> inputSiteIds;
 	std::vector<unsigned int> outputSiteIds;
 	std::vector<float> color;
+	unsigned int stateChangeCount;
 };
 
 const size_t SIZE_SITE_ID = sizeof(Site::siteId);
@@ -27,6 +28,7 @@ const size_t SIZE_BOOLEAN_FUNCTION_ID = sizeof(Site::booleanFunctionId);
 class RandomBooleanNetwork
 {
 public:
+	// constructors
 	RandomBooleanNetwork(
 		unsigned int rows,
 		unsigned int cols,
@@ -34,26 +36,38 @@ public:
 		unsigned int externalInputRowCount,
 		unsigned int feedbackInputRowCount,
 		unsigned int externalOutputRowCount,
-		bool neighborhoodConnections
+		bool neighborhoodConnections,
+		bool autoFeedForward
 	);
+
+	// public member functions
 	void resetCellStates();
 	void setConnectivity(unsigned int connectivity);
 	void setNeighborhoodConnections(bool neighborhoodConnections);
 	void updateInputSites();
+	void shiftInputData(int offset);
 	bool iterate();
 	void incrementExternalInputRows();
 	void decrementExternalInputRows();
+	void incrementFeedbackInputRows();
+	void decrementFeedbackInputRows();
+	void incrementExternalOutputRows();
+	void decrementExternalOutputRows();
 	void feedForward();
+	void toggleAutoFeedForward();
+	void toggleAutoNewInput();
 	unsigned int getConnectivity();
 	std::vector<Site>* getSites();
+
+	// destructor
 	~RandomBooleanNetwork();
 
 private:
+
 	bool initialized;
 	std::vector<Site> sites;
 	std::default_random_engine rnGen;
 	std::set<unsigned int> checkSums;
-
 	unsigned int rows;
 	unsigned int cols;
 	unsigned int connectivity;
@@ -61,6 +75,8 @@ private:
 	unsigned int feedbackInputRowCount;
 	unsigned int externalOutputRowCount;
 	bool neighborhoodConnections;
+	bool autoFeedForward;
+	bool autoNewInput = false;
 
 	unsigned int externalInputStartCellIndex;
 	unsigned int externalInputEndCellIndex;
@@ -70,10 +86,9 @@ private:
 	unsigned int internalEndCellIndex;
 	unsigned int externalOutputStartCellIndex;
 	unsigned int externalOutputEndCellIndex;
-
 	unsigned int iteration = 0;
-	unsigned int getSitesCrc32();
 
+	// private member functions
 	void initialize(
 		unsigned int rows,
 		unsigned int cols,
@@ -81,14 +96,14 @@ private:
 		unsigned int externalInputRowCount,
 		unsigned int feedbackInputRowCount,
 		unsigned int externalOutputRowCount,
-		bool neighborhoodConnections
+		bool neighborhoodConnections,
+		bool autoFeedForward
 	);
 	void printConfigurationState();
 	void cleanUp();
 };
 
+// non-member functions
 std::string siteToJson(const Site& site);
-
-unsigned int siteCrc32(const Site& site);
 
 #endif

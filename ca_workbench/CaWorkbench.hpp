@@ -16,6 +16,7 @@ const GLuint GL_WINDOW_HEIGHT = 900;
 const unsigned int rows = 300;
 const unsigned int cols = 600;
 const GLuint cellStatesVertexCount = rows * cols * 6;
+const string SCREENSHOT_SAVE_DIRECTORY = "c:\\ca_workbench_screenshots\\";
 
 class CaWorkbench {
 
@@ -37,11 +38,14 @@ private:
 	OglShaderProgram gridShaderProg;
 	OglShaderProgram cellShaderProg;
 	bool pointMode = false;
+	bool gridLinesOn = false;
+	unsigned int screenShotId = 0;
 
 	// CA variables
 	bool renderComplete = false;
 	RandomBooleanNetwork* rbn;
 	static RandomBooleanNetwork* theRbn;
+	static CaWorkbench* theCaWorkbench;
 	unsigned int vertexDataElements = rows * cols * 5; // 2 floats for translation + 3 floats for color = 5
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
@@ -56,6 +60,8 @@ private:
 	void initGlWindow();
 	void initShaders();
 	void updateCellStates();
+	void toggleGridLines();
+	void screenShot();
 };
 
 #endif

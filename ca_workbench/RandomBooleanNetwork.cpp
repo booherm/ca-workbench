@@ -9,7 +9,8 @@ RandomBooleanNetwork::RandomBooleanNetwork(
 	unsigned int externalInputRowCount,
 	unsigned int feedbackInputRowCount,
 	unsigned int externalOutputRowCount,
-	bool neighborhoodConnections
+	bool neighborhoodConnections,
+	bool autoFeedForward
 ) {
 	// initialize random number generator
 	rnGen.seed(random_device()());
@@ -20,7 +21,8 @@ RandomBooleanNetwork::RandomBooleanNetwork(
 		externalInputRowCount,
 		feedbackInputRowCount,
 		externalOutputRowCount,
-		neighborhoodConnections
+		neighborhoodConnections,
+		autoFeedForward
 	);
 }
 
@@ -31,7 +33,8 @@ void RandomBooleanNetwork::initialize(
 	unsigned int externalInputRowCount,
 	unsigned int feedbackInputRowCount,
 	unsigned int externalOutputRowCount,
-	bool neighborhoodConnections
+	bool neighborhoodConnections,
+	bool autoFeedForward
 ) {
 	this->rows = rows;
 	this->cols = cols;
@@ -40,6 +43,7 @@ void RandomBooleanNetwork::initialize(
 	this->feedbackInputRowCount = feedbackInputRowCount;
 	this->externalOutputRowCount = externalOutputRowCount;
 	this->neighborhoodConnections = neighborhoodConnections;
+	this->autoFeedForward = autoFeedForward;
 
 	externalInputStartCellIndex = 0;
 	externalInputEndCellIndex = externalInputStartCellIndex + (externalInputRowCount * cols) - 1;
@@ -67,6 +71,20 @@ void RandomBooleanNetwork::updateInputSites()
 	checkSums.clear();
 }
 
+void RandomBooleanNetwork::shiftInputData(int offset) {
+	bool t1;
+	bool t2 = sites[externalInputEndCellIndex].currentState;
+
+	for (unsigned int i = externalInputStartCellIndex; i <= externalInputEndCellIndex; i++) {
+		Site* s = &sites[i];
+		t1 = s->currentState;
+		s->currentState = t2;
+		t2 = t1;
+	}
+
+	checkSums.clear();
+}
+
 void RandomBooleanNetwork::resetCellStates()
 {
 	iteration = 0;
@@ -88,6 +106,7 @@ void RandomBooleanNetwork::resetCellStates()
 		// choose random initial state
 		s.currentState = initialStateRandomDist(rnGen);
 		s.workingState = false;
+		s.stateChangeCount = 0;
 
 		s.color.resize(3);
 		if (i >= externalInputStartCellIndex && i <= externalInputEndCellIndex) {  // external input site, blue, no boolean function
@@ -244,7 +263,7 @@ void RandomBooleanNetwork::resetCellStates()
 	else
 	{
 		// initialize site connectivity, arbitrary sites
-		uniform_int_distribution<unsigned int> randInputDist(0, siteCount - 1);
+		uniform_int_distribution<unsigned int> randInputDist(0, externalOutputStartCellIndex - 1);
 		for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 			Site* s = &sites[i];
 
@@ -322,6 +341,12 @@ bool RandomBooleanNetwork::iterate()
 	// update logical state
 	//cout << "begin iteration " << std::to_string(iteration) << endl;
 	
+	if (autoFeedForward)
+		feedForward();
+
+	if (autoNewInput)
+		this->updateInputSites();
+
 	unsigned int siteCount = sites.size();
 
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
@@ -350,6 +375,43 @@ bool RandomBooleanNetwork::iterate()
 	boost::crc_32_type crcResult;
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		Site* s = &sites[i];
+
+		if (s->currentState != s->workingState){
+			s->stateChangeCount++;
+			
+			if(i >= externalOutputStartCellIndex){
+				s->color.at(0) = 1.0f;
+				s->color.at(1) = 0.0f;
+				s->color.at(2) = 0.0f;
+			}
+			else {
+				s->color.at(0) = 0.0f;
+				s->color.at(1) = 0.0f;
+				s->color.at(2) = 0.0f;
+			}
+		}
+		else {
+			if (i >= externalOutputStartCellIndex) {
+				float newColor = s->color.at(1) + 0.01f;
+				if (newColor > 1.0f)
+					newColor = 1.0f;
+
+				s->color.at(0) = 1.0f;
+				s->color.at(1) = newColor;
+				s->color.at(2) = newColor;
+			}
+			else
+			{
+				float newColor = s->color.at(0) + 0.01f;
+				if (newColor > 1.0f)
+					newColor = 1.0f;
+
+				s->color.at(0) = newColor;
+				s->color.at(1) = newColor;
+				s->color.at(2) = newColor;
+			}
+		}
+
 		s->currentState = s->workingState;
 
 		//crcResult.process_bytes(&s->siteId, SIZE_SITE_ID);
@@ -362,6 +424,7 @@ bool RandomBooleanNetwork::iterate()
 	}
 	unsigned int crcResultChecksum = crcResult.checksum();
 
+	// store checksum in set, returning whether or not a cycle has been detected yet
 	iteration++;
 	std::set<unsigned int>::iterator csi = checkSums.find(crcResultChecksum);
 	if (csi == checkSums.end()) {
@@ -372,11 +435,6 @@ bool RandomBooleanNetwork::iterate()
 		cout << "Cycle detected on iteration " << std::to_string(iteration) << endl;
 		return true;
 	}
-
-	//cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(crcResultChecksum) << endl;
-	//cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(getSitesCrc32()) << endl;
-	
-//	return iteration == 100 ? true : false;
 }
 
 void RandomBooleanNetwork::incrementExternalInputRows() {
@@ -394,7 +452,8 @@ void RandomBooleanNetwork::incrementExternalInputRows() {
 		this->externalInputRowCount + 1,
 		this->feedbackInputRowCount,
 		this->externalOutputRowCount,
-		this->neighborhoodConnections
+		this->neighborhoodConnections,
+		this->autoFeedForward
 	);
 }
 
@@ -413,7 +472,87 @@ void RandomBooleanNetwork::decrementExternalInputRows() {
 		this->externalInputRowCount - 1,
 		this->feedbackInputRowCount,
 		this->externalOutputRowCount,
-		this->neighborhoodConnections
+		this->neighborhoodConnections,
+		this->autoFeedForward
+	);
+}
+
+void RandomBooleanNetwork::incrementFeedbackInputRows() {
+	unsigned int internalRowCount = (internalEndCellIndex - internalStartCellIndex) / cols;
+	if (internalRowCount == 1)
+	{
+		cout << "cannot add more feedback input rows, no room left.  Ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount,
+		this->feedbackInputRowCount + 1,
+		this->externalOutputRowCount,
+		this->neighborhoodConnections,
+		this->autoFeedForward
+	);
+}
+
+void RandomBooleanNetwork::decrementFeedbackInputRows() {
+	if (feedbackInputRowCount == 0)
+	{
+		cout << "no more feedback input rows to remove, ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount,
+		this->feedbackInputRowCount - 1,
+		this->externalOutputRowCount,
+		this->neighborhoodConnections,
+		this->autoFeedForward
+	);
+}
+
+void RandomBooleanNetwork::incrementExternalOutputRows() {
+	unsigned int internalRowCount = (internalEndCellIndex - internalStartCellIndex) / cols;
+	if (internalRowCount == 1)
+	{
+		cout << "cannot add more external output rows, no room left.  Ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount,
+		this->feedbackInputRowCount,
+		this->externalOutputRowCount + 1,
+		this->neighborhoodConnections,
+		this->autoFeedForward
+	);
+}
+
+void RandomBooleanNetwork::decrementExternalOutputRows() {
+	unsigned int internalRowCount = (internalEndCellIndex - internalStartCellIndex) / cols;
+	if (externalOutputRowCount == 0)
+	{
+		cout << "no more external output rows to remove, ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount,
+		this->feedbackInputRowCount,
+		this->externalOutputRowCount - 1,
+		this->neighborhoodConnections,
+		this->autoFeedForward
 	);
 }
 
@@ -427,6 +566,16 @@ void RandomBooleanNetwork::feedForward() {
 	}
 }
 
+void RandomBooleanNetwork::toggleAutoFeedForward() {
+	autoFeedForward = !autoFeedForward;
+	printConfigurationState();
+}
+
+void RandomBooleanNetwork::toggleAutoNewInput() {
+	autoNewInput = !autoNewInput;
+	printConfigurationState();
+}
+
 unsigned int RandomBooleanNetwork::getConnectivity() {
 	return connectivity;
 }
@@ -436,35 +585,19 @@ std::vector<Site>* RandomBooleanNetwork::getSites()
 	return &sites;
 }
 
-unsigned int RandomBooleanNetwork::getSitesCrc32()
-{
-	boost::crc_32_type crcResult;
-	unsigned int size = sites.size();
-	for (unsigned int i = 0; i < size; i++)
-	{
-		Site* s = &sites[i];
-//		crcResult.process_bytes(&s.siteId, SIZE_SITE_ID);
-		crcResult.process_bytes(&s->currentState, SIZE_CURRENT_STATE);
-//		crcResult.process_bytes(&s.workingState, SIZE_WORKING_STATE);
-//		crcResult.process_bytes(&s.booleanFunctionId, SIZE_BOOLEAN_FUNCTION_ID);
-	//	crcResult.process_bytes(s.inputSiteIds.data(), s.inputSiteIds.size() * SIZE_SITE_ID);
-//		crcResult.process_bytes(s.outputSiteIds.data(), s.outputSiteIds.size() * SIZE_SITE_ID);
-	}
-
-	return crcResult.checksum();
-}
-
 void RandomBooleanNetwork::printConfigurationState() {
 
 	cout << "--------------------------------------------------------" << endl 
 		<< "Initializing RBN:" << endl
-		<< "rows                    = " << std::to_string(this->rows) << endl
-		<< "cols                    = " << std::to_string(this->cols) << endl
-		<< "connectivity            = " << std::to_string(this->connectivity) << endl
-		<< "externalInputRowCount   = " << std::to_string(this->externalInputRowCount) << endl
-		<< "feedbackInputRowCount   = " << std::to_string(this->feedbackInputRowCount) << endl
-		<< "externalOutputRowCount  = " << std::to_string(this->externalOutputRowCount) << endl
-		<< "neighborhoodConnections = " << (this->neighborhoodConnections ? "true" : "false") << endl
+		<< "rows                    = " << std::to_string(rows) << endl
+		<< "cols                    = " << std::to_string(cols) << endl
+		<< "connectivity            = " << std::to_string(connectivity) << endl
+		<< "externalInputRowCount   = " << std::to_string(externalInputRowCount) << endl
+		<< "feedbackInputRowCount   = " << std::to_string(feedbackInputRowCount) << endl
+		<< "externalOutputRowCount  = " << std::to_string(externalOutputRowCount) << endl
+		<< "neighborhoodConnections = " << (neighborhoodConnections ? "true" : "false") << endl
+		<< "autoFeedForward         = " << (autoFeedForward ? "true" : "false") << endl
+		<< "autoNewInput            = " << (autoNewInput ? "true" : "false") << endl
 		<< endl;
 }
 
@@ -508,36 +641,4 @@ std::string siteToJson(const Site& site) {
 	result += "]}";
 
 	return result;
-}
-
-unsigned int siteCrc32(const Site& site) {
-
-	std::string result =
-		std::to_string(site.siteId)
-		+ "|" + std::to_string(site.currentState)
-		+ "|" + std::to_string(site.workingState)
-		+ "|" + std::to_string(site.booleanFunctionId)
-		+ "|";
-
-	std::vector<unsigned int> inputSiteIds = site.inputSiteIds;
-	unsigned int inputSiteIdsSize = inputSiteIds.size();
-	for (unsigned int i = 0; i < inputSiteIdsSize; i++) {
-		if (i > 0)
-			result += ",";
-		result += std::to_string(inputSiteIds[i]);
-	}
-
-	result += "|";
-	std::vector<unsigned int> outputSiteIds = site.outputSiteIds;
-	unsigned int outputSiteIdsSize = outputSiteIds.size();
-	for (unsigned int i = 0; i < outputSiteIdsSize; i++) {
-		if (i > 0)
-			result += ",";
-		result += std::to_string(outputSiteIds[i]);
-	}
-
-	boost::crc_32_type crcResult;
-	crcResult.process_bytes(result.data(), result.length());
-	
-	return crcResult.checksum();
 }
