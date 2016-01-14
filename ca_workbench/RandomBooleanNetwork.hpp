@@ -41,6 +41,9 @@ public:
 	void setNeighborhoodConnections(bool neighborhoodConnections);
 	void updateInputSites();
 	bool iterate();
+	void incrementExternalInputRows();
+	void decrementExternalInputRows();
+	void feedForward();
 	unsigned int getConnectivity();
 	std::vector<Site>* getSites();
 	~RandomBooleanNetwork();
@@ -70,6 +73,17 @@ private:
 
 	unsigned int iteration = 0;
 	unsigned int getSitesCrc32();
+
+	void initialize(
+		unsigned int rows,
+		unsigned int cols,
+		unsigned int connectivity,
+		unsigned int externalInputRowCount,
+		unsigned int feedbackInputRowCount,
+		unsigned int externalOutputRowCount,
+		bool neighborhoodConnections
+	);
+	void printConfigurationState();
 	void cleanUp();
 };
 

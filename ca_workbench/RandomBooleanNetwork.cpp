@@ -11,6 +11,28 @@ RandomBooleanNetwork::RandomBooleanNetwork(
 	unsigned int externalOutputRowCount,
 	bool neighborhoodConnections
 ) {
+	// initialize random number generator
+	rnGen.seed(random_device()());
+	initialize(
+		rows,
+		cols,
+		connectivity,
+		externalInputRowCount,
+		feedbackInputRowCount,
+		externalOutputRowCount,
+		neighborhoodConnections
+	);
+}
+
+void RandomBooleanNetwork::initialize(
+	unsigned int rows,
+	unsigned int cols,
+	unsigned int connectivity,
+	unsigned int externalInputRowCount,
+	unsigned int feedbackInputRowCount,
+	unsigned int externalOutputRowCount,
+	bool neighborhoodConnections
+) {
 	this->rows = rows;
 	this->cols = cols;
 	this->connectivity = connectivity;
@@ -28,12 +50,11 @@ RandomBooleanNetwork::RandomBooleanNetwork(
 	externalOutputStartCellIndex = internalEndCellIndex + 1;
 	externalOutputEndCellIndex = externalOutputStartCellIndex + (externalOutputRowCount * cols) - 1;
 
-	// initialize random number generator
-	rnGen.seed(random_device()());
-
 	initialized = false;
 	resetCellStates();
 	initialized = true;
+
+	printConfigurationState();
 }
 
 void RandomBooleanNetwork::updateInputSites()
@@ -273,7 +294,7 @@ void RandomBooleanNetwork::setConnectivity(unsigned int connectivity) {
 
 		this->connectivity = connectivity;
 		resetCellStates();
-		cout << "connectivity set to " << std::to_string(connectivity) << endl;
+		printConfigurationState();
 	}
 	else {
 		cout << "connectivity out of bounds, ignoring" << endl;
@@ -293,7 +314,7 @@ void RandomBooleanNetwork::setNeighborhoodConnections(bool neighborhoodConnectio
 
 	this->neighborhoodConnections = neighborhoodConnections;
 	resetCellStates();
-	cout << "force neighborhood connections set to " << (neighborhoodConnections ? "true" : "false") << endl;
+	printConfigurationState();
 }
 
 bool RandomBooleanNetwork::iterate()
@@ -358,6 +379,54 @@ bool RandomBooleanNetwork::iterate()
 //	return iteration == 100 ? true : false;
 }
 
+void RandomBooleanNetwork::incrementExternalInputRows() {
+	unsigned int internalRowCount = (internalEndCellIndex - internalStartCellIndex) / cols;
+	if (internalRowCount == 0)
+	{
+		cout << "cannot add more external input rows, no room left.  Ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount + 1,
+		this->feedbackInputRowCount,
+		this->externalOutputRowCount,
+		this->neighborhoodConnections
+	);
+}
+
+void RandomBooleanNetwork::decrementExternalInputRows() {
+	unsigned int internalRowCount = (internalEndCellIndex - internalStartCellIndex) / cols;
+	if (externalInputRowCount == 1)
+	{
+		cout << "no more external input rows to remove, ignoring." << endl;
+		return;
+	}
+
+	initialize(
+		this->rows,
+		this->cols,
+		this->connectivity,
+		this->externalInputRowCount - 1,
+		this->feedbackInputRowCount,
+		this->externalOutputRowCount,
+		this->neighborhoodConnections
+	);
+}
+
+void RandomBooleanNetwork::feedForward() {
+	// Copy feedbackInputRowCount rows from the external output into the feedback input sites.
+	unsigned int outputSiteIndex = externalOutputStartCellIndex;
+	for (unsigned int i = feedbackInputStartCellIndex; i <= feedbackInputEndCellIndex && outputSiteIndex <= externalOutputEndCellIndex; i++) {
+		Site* feedbackSite = &sites[i];
+		Site* outputSite = &sites[outputSiteIndex++];
+		feedbackSite->currentState = outputSite->currentState;
+	}
+}
+
 unsigned int RandomBooleanNetwork::getConnectivity() {
 	return connectivity;
 }
@@ -383,6 +452,20 @@ unsigned int RandomBooleanNetwork::getSitesCrc32()
 	}
 
 	return crcResult.checksum();
+}
+
+void RandomBooleanNetwork::printConfigurationState() {
+
+	cout << "--------------------------------------------------------" << endl 
+		<< "Initializing RBN:" << endl
+		<< "rows                    = " << std::to_string(this->rows) << endl
+		<< "cols                    = " << std::to_string(this->cols) << endl
+		<< "connectivity            = " << std::to_string(this->connectivity) << endl
+		<< "externalInputRowCount   = " << std::to_string(this->externalInputRowCount) << endl
+		<< "feedbackInputRowCount   = " << std::to_string(this->feedbackInputRowCount) << endl
+		<< "externalOutputRowCount  = " << std::to_string(this->externalOutputRowCount) << endl
+		<< "neighborhoodConnections = " << (this->neighborhoodConnections ? "true" : "false") << endl
+		<< endl;
 }
 
 void RandomBooleanNetwork::cleanUp()

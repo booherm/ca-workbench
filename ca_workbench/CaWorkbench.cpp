@@ -8,7 +8,7 @@ CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	rbn = new RandomBooleanNetwork(rows, cols, 3, 100, 20, 20, false);
+	rbn = new RandomBooleanNetwork(rows, cols, 3, 5, 20, 20, false);
 	theRbn = rbn;
 	
 	vertexData.resize(vertexDataElements);
@@ -159,6 +159,9 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 			case GLFW_KEY_R:
 				theRbn->updateInputSites();
 				break;
+			case GLFW_KEY_F:
+				theRbn->feedForward();
+				break;
 			case GLFW_KEY_UP:
 				theRbn->setConnectivity(theRbn->getConnectivity() + 1);
 				break;
@@ -170,6 +173,12 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 				break;
 			case GLFW_KEY_RIGHT:
 				theRbn->setNeighborhoodConnections(true);
+				break;
+			case GLFW_KEY_KP_4:
+				theRbn->decrementExternalInputRows();
+				break;
+			case GLFW_KEY_KP_6:
+				theRbn->incrementExternalInputRows();
 				break;
 		}
 	}
