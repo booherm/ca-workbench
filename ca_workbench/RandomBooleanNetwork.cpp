@@ -32,6 +32,7 @@ void RandomBooleanNetwork::updateInputSites()
 		Site* s = &sites[i];
 		s->currentState = initialStateRandomDist(rnGen);
 	}
+	checkSums.clear();
 }
 
 void RandomBooleanNetwork::resetCellStates()
@@ -86,7 +87,7 @@ void RandomBooleanNetwork::resetCellStates()
 	if (neighborhoodConnections)
 	{
 		// neighbor connectivity
-		if (connectivity <= 4) // von Neumann (k <= 4)
+		if (connectivity <= 4) // von Neumann neighborhood (k <= 4)
 		{
 			for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 				//cout << "processing site " << std::to_string(i) << endl;
@@ -134,6 +135,71 @@ void RandomBooleanNetwork::resetCellStates()
 				}
 			}
 		}
+		else  // Moore neighborhood
+		{
+			for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
+				//cout << "processing site " << std::to_string(i) << endl;
+				Site* s = &sites[i];
+
+				// put neighbors in bag
+				unsigned int thisSiteR = i / cols;
+				unsigned int thisSiteC = i - (thisSiteR * cols);
+				unsigned int neighborR;
+				unsigned int neighborC;
+				std::unordered_set<unsigned int> bag;
+				// above
+				neighborR = thisSiteR == externalInputRowCount ? rows - 1 : thisSiteR - 1;
+				neighborC = thisSiteC;
+				bag.insert((neighborR * cols) + neighborC);
+				// above right
+				neighborR = thisSiteR == externalInputRowCount ? rows - 1 : thisSiteR - 1;
+				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
+				bag.insert((neighborR * cols) + neighborC);
+				// right
+				neighborR = thisSiteR;
+				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
+				bag.insert((neighborR * cols) + neighborC);
+				// below right
+				neighborR = thisSiteR == rows - 1 ? externalInputRowCount : thisSiteR + 1;
+				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
+				bag.insert((neighborR * cols) + neighborC);
+				// below
+				neighborR = thisSiteR == rows - 1 ? externalInputRowCount : thisSiteR + 1;
+				neighborC = thisSiteC;
+				bag.insert((neighborR * cols) + neighborC);
+				// below left
+				neighborR = thisSiteR == rows - 1 ? externalInputRowCount : thisSiteR + 1;
+				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
+				bag.insert((neighborR * cols) + neighborC);
+				// left
+				neighborR = thisSiteR;
+				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
+				bag.insert((neighborR * cols) + neighborC);
+				// above left
+				neighborR = thisSiteR == externalInputRowCount ? rows - 1 : thisSiteR - 1;
+				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
+				bag.insert((neighborR * cols) + neighborC);
+
+				// assign k inputs randomly by drawing from the bag of neighbors
+				for (unsigned int k = 0; k < connectivity; k++) {
+					uniform_int_distribution<unsigned int> randNeighborDist(0, bag.size() - 1);
+					std::unordered_set<unsigned int>::iterator it = bag.begin();
+					unsigned int inputSiteBagIndex = randNeighborDist(rnGen);
+					for (unsigned int z = 0; z < inputSiteBagIndex; z++) {
+						it++;
+					}
+					unsigned int inputSite = *it;
+					s->inputSiteIds.push_back(inputSite);
+
+					// add this site to the input site's output
+					sites[inputSite].outputSiteIds.push_back(s->siteId);
+
+					// remove from bag
+					bag.erase(it);
+				}
+			}
+
+		}
 	}
 	else
 	{
@@ -150,8 +216,8 @@ void RandomBooleanNetwork::resetCellStates()
 
 				unsigned int attempt = 0;
 				do {
-					if (attempt > 0)
-						cout << "extraneous effort" << endl;
+					//if (attempt > 0)
+//						cout << "extraneous effort" << endl;
 					inputSite = randInputDist(rnGen);
 					alreadyUsed = find(s->inputSiteIds.begin(), s->inputSiteIds.end(), inputSite) != s->inputSiteIds.end();
 					attempt++;
@@ -176,6 +242,39 @@ void RandomBooleanNetwork::resetCellStates()
 		cout << std::to_string(siteCrc32(s)) << endl;
 	}
 	*/
+}
+
+void RandomBooleanNetwork::setConnectivity(unsigned int connectivity) {
+
+	if(connectivity <= 100){
+		if (neighborhoodConnections && connectivity > 8) {
+			cout << "connectivity cannot be set > 8 when neighborhood connections is on, ignoring" << endl;
+			return;
+		}
+
+		this->connectivity = connectivity;
+		resetCellStates();
+		cout << "connectivity set to " << std::to_string(connectivity) << endl;
+	}
+	else {
+		cout << "connectivity out of bounds, ignoring" << endl;
+	}
+}
+
+void RandomBooleanNetwork::setNeighborhoodConnections(bool neighborhoodConnections) {
+	if (this->neighborhoodConnections == neighborhoodConnections) {
+		cout << "force neighborhood connections is already set to " << (neighborhoodConnections ? "true" : "false") << ", ignoring" << endl;
+		return;
+	}
+
+	if (connectivity > 8) {
+		cout << "connectivity must be <= 8 to turn on neighborhood connections, ignoring" << endl;
+		return;
+	}
+
+	this->neighborhoodConnections = neighborhoodConnections;
+	resetCellStates();
+	cout << "force neighborhood connections set to " << (neighborhoodConnections ? "true" : "false") << endl;
 }
 
 bool RandomBooleanNetwork::iterate()
@@ -207,18 +306,41 @@ bool RandomBooleanNetwork::iterate()
 		s->workingState = newState;
 	}
 
-	// push working state to new current state
+	// push working state to new current state and calculate overall state checksum
+	boost::crc_32_type crcResult;
 	for (unsigned int i = externalInputRowCount * cols; i < siteCount; i++) {
 		Site* s = &sites[i];
 		s->currentState = s->workingState;
+
+		//crcResult.process_bytes(&s->siteId, SIZE_SITE_ID);
+		//crcResult.process_bytes(&s->currentState, SIZE_CURRENT_STATE);
+		crcResult.process_byte(s->currentState);
+		//crcResult.process_bytes(&s->workingState, SIZE_WORKING_STATE);
+		//crcResult.process_bytes(&s->booleanFunctionId, SIZE_BOOLEAN_FUNCTION_ID);
+		//crcResult.process_bytes(s->inputSiteIds.data(), s->inputSiteIds.size() * SIZE_SITE_ID);
+		//crcResult.process_bytes(s->outputSiteIds.data(), s->outputSiteIds.size() * SIZE_SITE_ID);
+	}
+	unsigned int crcResultChecksum = crcResult.checksum();
+
+	iteration++;
+	std::set<unsigned int>::iterator csi = checkSums.find(crcResultChecksum);
+	if (csi == checkSums.end()) {
+		checkSums.insert(crcResultChecksum);
+		return false;
+	}
+	else{
+		cout << "Cycle detected on iteration " << std::to_string(iteration) << endl;
+		return true;
 	}
 
-//	cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(getSitesCrc32()) << endl;
-	iteration++;
-
-
+	//cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(crcResultChecksum) << endl;
+	//cout << "Iteration: " << std::to_string(iteration) << ": CRC32 " << std::to_string(getSitesCrc32()) << endl;
 	
-	return iteration == 100 ? true : false;
+//	return iteration == 100 ? true : false;
+}
+
+unsigned int RandomBooleanNetwork::getConnectivity() {
+	return connectivity;
 }
 
 std::vector<Site>* RandomBooleanNetwork::getSites()
@@ -226,18 +348,19 @@ std::vector<Site>* RandomBooleanNetwork::getSites()
 	return &sites;
 }
 
-unsigned int RandomBooleanNetwork::getSitesCrc32() {
-
+unsigned int RandomBooleanNetwork::getSitesCrc32()
+{
 	boost::crc_32_type crcResult;
-	for (unsigned int i = 0; i < sites.size(); i++)
+	unsigned int size = sites.size();
+	for (unsigned int i = 0; i < size; i++)
 	{
-		Site s = sites[i];
-		crcResult.process_bytes(&s.siteId, SIZE_SITE_ID);
-		crcResult.process_bytes(&s.currentState, SIZE_CURRENT_STATE);
-		crcResult.process_bytes(&s.workingState, SIZE_WORKING_STATE);
-		crcResult.process_bytes(&s.booleanFunctionId, SIZE_BOOLEAN_FUNCTION_ID);
-		crcResult.process_bytes(s.inputSiteIds.data(), s.inputSiteIds.size() * SIZE_SITE_ID);
-		crcResult.process_bytes(s.outputSiteIds.data(), s.outputSiteIds.size() * SIZE_SITE_ID);
+		Site* s = &sites[i];
+//		crcResult.process_bytes(&s.siteId, SIZE_SITE_ID);
+		crcResult.process_bytes(&s->currentState, SIZE_CURRENT_STATE);
+//		crcResult.process_bytes(&s.workingState, SIZE_WORKING_STATE);
+//		crcResult.process_bytes(&s.booleanFunctionId, SIZE_BOOLEAN_FUNCTION_ID);
+	//	crcResult.process_bytes(s.inputSiteIds.data(), s.inputSiteIds.size() * SIZE_SITE_ID);
+//		crcResult.process_bytes(s.outputSiteIds.data(), s.outputSiteIds.size() * SIZE_SITE_ID);
 	}
 
 	return crcResult.checksum();
@@ -247,6 +370,7 @@ void RandomBooleanNetwork::cleanUp()
 {
 	if (initialized) {
 		sites.clear();
+		checkSums.clear();
 	}
 }
 

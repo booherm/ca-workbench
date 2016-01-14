@@ -8,7 +8,7 @@ CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	rbn = new RandomBooleanNetwork(rows, cols, 2, 10, 10, false);
+	rbn = new RandomBooleanNetwork(rows, cols, 4, 50, 10, false);
 	theRbn = rbn;
 	
 	vertexData.resize(vertexDataElements);
@@ -148,12 +148,31 @@ void CaWorkbench::initShaders()
 
 void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	else if (action == GLFW_PRESS && key == GLFW_KEY_SPACE)
-		theRbn->resetCellStates();
-	else if (action == GLFW_PRESS && key == GLFW_KEY_R)
-		theRbn->updateInputSites();
+	if (action == GLFW_PRESS) {
+		switch(key){
+			case GLFW_KEY_ESCAPE:
+				glfwSetWindowShouldClose(window, GL_TRUE);
+				break;
+			case GLFW_KEY_SPACE:
+				theRbn->resetCellStates();
+				break;
+			case GLFW_KEY_R:
+				theRbn->updateInputSites();
+				break;
+			case GLFW_KEY_UP:
+				theRbn->setConnectivity(theRbn->getConnectivity() + 1);
+				break;
+			case GLFW_KEY_DOWN:
+				theRbn->setConnectivity(theRbn->getConnectivity() - 1);
+				break;
+			case GLFW_KEY_LEFT:
+				theRbn->setNeighborhoodConnections(false);
+				break;
+			case GLFW_KEY_RIGHT:
+				theRbn->setNeighborhoodConnections(true);
+				break;
+		}
+	}
 }
 
 void CaWorkbench::doRenderLoop()
@@ -167,7 +186,8 @@ void CaWorkbench::doRenderLoop()
 		updateRenderState();  // pretty consistent 1ms regardless of point vs. quad, size of grid
 
 		if (renderComplete) {
-			rbn->resetCellStates();
+			//rbn->resetCellStates();
+			rbn->updateInputSites();
 			/*
 			//unsigned int currentRuleNumber = wca->getActiveRuleNumber();
 			unsigned int currentRuleNumber = rbn->getActiveRuleNumber();

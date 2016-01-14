@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <random>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -35,8 +36,11 @@ public:
 		bool neighborhoodConnections
 	);
 	void resetCellStates();
+	void setConnectivity(unsigned int connectivity);
+	void setNeighborhoodConnections(bool neighborhoodConnections);
 	void updateInputSites();
 	bool iterate();
+	unsigned int getConnectivity();
 	std::vector<Site>* getSites();
 	~RandomBooleanNetwork();
 
@@ -44,6 +48,7 @@ private:
 	bool initialized;
 	std::vector<Site> sites;
 	std::default_random_engine rnGen;
+	std::set<unsigned int> checkSums;
 
 	unsigned int rows;
 	unsigned int cols;
