@@ -32,6 +32,7 @@ public:
 		unsigned int cols,
 		unsigned int connectivity,
 		unsigned int externalInputRowCount,
+		unsigned int feedbackInputRowCount,
 		unsigned int externalOutputRowCount,
 		bool neighborhoodConnections
 	);
@@ -54,8 +55,18 @@ private:
 	unsigned int cols;
 	unsigned int connectivity;
 	unsigned int externalInputRowCount;
+	unsigned int feedbackInputRowCount;
 	unsigned int externalOutputRowCount;
 	bool neighborhoodConnections;
+
+	unsigned int externalInputStartCellIndex;
+	unsigned int externalInputEndCellIndex;
+	unsigned int feedbackInputStartCellIndex;
+	unsigned int feedbackInputEndCellIndex;
+	unsigned int internalStartCellIndex;
+	unsigned int internalEndCellIndex;
+	unsigned int externalOutputStartCellIndex;
+	unsigned int externalOutputEndCellIndex;
 
 	unsigned int iteration = 0;
 	unsigned int getSitesCrc32();

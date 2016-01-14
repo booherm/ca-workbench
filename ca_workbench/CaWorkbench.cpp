@@ -8,7 +8,7 @@ CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	rbn = new RandomBooleanNetwork(rows, cols, 4, 50, 10, false);
+	rbn = new RandomBooleanNetwork(rows, cols, 3, 100, 20, 20, false);
 	theRbn = rbn;
 	
 	vertexData.resize(vertexDataElements);
