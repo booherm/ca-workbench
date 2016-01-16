@@ -1,25 +1,31 @@
 #include <iostream>
+#include "AudioManager.hpp"
 #include "CaWorkbench.hpp"
 
-using namespace std;
-
-int main(void)
+int main()
 {
 	try {
 		cout << "Starting CA Workbench" << endl;
 
 		CaWorkbench caWb = CaWorkbench();
 		caWb.doRenderLoop();
-		//RandomBooleanNetwork* rbn = new RandomBooleanNetwork(10, 10, 2);
-		//delete rbn;
+
+		//AudioManager am = AudioManager();
+		//am.printDeviceInformation();
+		//am.startInputStream();
+		//am.stopInputStream();
+		//system("pause");
+		//am.startOutputStream();
+		//am.stopOutputStream();
+		//am.shutdown();
 
 		cout << "Exiting CA Workbench" << endl;
-		system("pause");
 	}
 	catch (string e) {
 		cout << e << endl;
-		system("pause");
 	}
+
+	system("pause");
 
 	return 0;
 }
