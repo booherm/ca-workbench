@@ -13,6 +13,7 @@ struct Site {
 	unsigned int siteId;
 	bool currentState;
 	bool workingState;
+	bool freshActivation;
 	unsigned int booleanFunctionId;
 	std::vector<unsigned int> inputSiteIds;
 	std::vector<unsigned int> outputSiteIds;
@@ -42,7 +43,7 @@ public:
 
 	// public member functions
 	void resetCellStates();
-	void setConnectivity(unsigned int connectivity);
+	bool setConnectivity(unsigned int connectivity);
 	void setNeighborhoodConnections(bool neighborhoodConnections);
 	void updateInputSites();
 	void shiftInputData(int offset);

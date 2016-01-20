@@ -33,3 +33,11 @@ void uint64ToString(UINT64 value, std::string& result) {
 	} while (q);
 	std::reverse(result.begin(), result.end());
 }
+
+GLfloat angleBetweenVectors(glm::vec2 baseVector, glm::vec2 toVector) {
+	GLfloat theta = glm::acos(glm::dot(baseVector, toVector) / (glm::length(baseVector) * glm::length(toVector)));
+	if (toVector.y < baseVector.y)
+		theta = glm::two_pi<GLfloat>() - theta;
+
+	return theta;
+}

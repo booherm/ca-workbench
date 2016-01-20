@@ -105,6 +105,7 @@ void RandomBooleanNetwork::resetCellStates()
 
 		// choose random initial state
 		s.currentState = initialStateRandomDist(rnGen);
+		s.freshActivation = false;
 		s.workingState = false;
 		s.stateChangeCount = 0;
 
@@ -118,6 +119,7 @@ void RandomBooleanNetwork::resetCellStates()
 			s.color[0] = 0.0f;
 			s.color[1] = 1.0f;
 			s.color[2] = 0.0f;
+			s.freshActivation = s.currentState;
 		}
 		else if (i >= externalOutputStartCellIndex && i <= externalOutputEndCellIndex) { // external output site, red
 		   // choose random boolean function
@@ -136,6 +138,7 @@ void RandomBooleanNetwork::resetCellStates()
 			s.color[0] = 0.0f;
 			s.color[1] = 0.0f;
 			s.color[2] = 0.0f;
+			s.freshActivation = s.currentState;
 		}
 
 		sites[i] = s;
@@ -303,12 +306,12 @@ void RandomBooleanNetwork::resetCellStates()
 	*/
 }
 
-void RandomBooleanNetwork::setConnectivity(unsigned int connectivity) {
+bool RandomBooleanNetwork::setConnectivity(unsigned int connectivity) {
 
 	if(connectivity <= 100){
 		if (neighborhoodConnections && connectivity > 8) {
 			cout << "connectivity cannot be set > 8 when neighborhood connections is on, ignoring" << endl;
-			return;
+			return false;
 		}
 
 		this->connectivity = connectivity;
@@ -317,7 +320,10 @@ void RandomBooleanNetwork::setConnectivity(unsigned int connectivity) {
 	}
 	else {
 		cout << "connectivity out of bounds, ignoring" << endl;
+		return false;
 	}
+
+	return true;
 }
 
 void RandomBooleanNetwork::setNeighborhoodConnections(bool neighborhoodConnections) {
@@ -377,21 +383,26 @@ bool RandomBooleanNetwork::iterate()
 		Site* s = &sites[i];
 
 		if (s->currentState != s->workingState){
+
+			// new state is different from the current state, increment the change counter and reset it to a solid color
 			s->stateChangeCount++;
+			s->freshActivation = s->workingState;
 			
-			if(i >= externalOutputStartCellIndex){
+			if(i >= externalOutputStartCellIndex){  // external output cells
 				s->color.at(0) = 1.0f;
 				s->color.at(1) = 0.0f;
 				s->color.at(2) = 0.0f;
 			}
-			else {
+			else { // internal cells
 				s->color.at(0) = 0.0f;
 				s->color.at(1) = 0.0f;
 				s->color.at(2) = 0.0f;
 			}
 		}
 		else {
-			if (i >= externalOutputStartCellIndex) {
+
+			// update cell color to fade out as it's non-updated age increases
+			if (i >= externalOutputStartCellIndex) {  // external output cells
 				float newColor = s->color.at(1) + 0.01f;
 				if (newColor > 1.0f)
 					newColor = 1.0f;
@@ -400,8 +411,7 @@ bool RandomBooleanNetwork::iterate()
 				s->color.at(1) = newColor;
 				s->color.at(2) = newColor;
 			}
-			else
-			{
+			else { // internal cells
 				float newColor = s->color.at(0) + 0.01f;
 				if (newColor > 1.0f)
 					newColor = 1.0f;
@@ -410,10 +420,13 @@ bool RandomBooleanNetwork::iterate()
 				s->color.at(1) = newColor;
 				s->color.at(2) = newColor;
 			}
+
+			s->freshActivation = false;
 		}
 
 		s->currentState = s->workingState;
 
+		// add relevent state values to running checksum bytes
 		//crcResult.process_bytes(&s->siteId, SIZE_SITE_ID);
 		//crcResult.process_bytes(&s->currentState, SIZE_CURRENT_STATE);
 		crcResult.process_byte(s->currentState);
