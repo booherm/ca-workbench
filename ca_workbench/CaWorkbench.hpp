@@ -37,19 +37,19 @@ private:
 	// grid
 	GLuint vertGridVao;
 	GLuint horzGridVao;
-	GLuint vertGridVbo;
-	GLuint horzGridVbo;
+	GLuint vertGridModelVbo;
+	GLuint horzGridModelVbo;
 	OglShaderProgram gridShaderProg;
 	bool gridLinesOn = false;
 
 	// cells
 	GLuint cellStatesVao;
 	GLuint cellModelVbo;
-	GLuint cellTranslationVbo;
+	GLuint cellTransformVbo;
 	OglShaderProgram cellShaderProg;
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
-	std::vector<GLfloat> cellVertexData;
+	std::vector<GLfloat> cellTransformData;
 	bool pointMode = false;
 
 	// attractor vectors
