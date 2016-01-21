@@ -17,11 +17,10 @@
 
 const GLuint GL_WINDOW_WIDTH = 1800;
 const GLuint GL_WINDOW_HEIGHT = 900;
-const unsigned int rows = 300;
-const unsigned int cols = 600;
+const unsigned int rows = 100;
+const unsigned int cols = 200;
 //const unsigned int rows = 800;
 //const unsigned int cols = 1600;
-const GLuint cellStatesVertexCount = rows * cols * 6;
 const string SCREENSHOT_SAVE_DIRECTORY = "c:\\ca_workbench_screenshots\\";
 
 class CaWorkbench {
@@ -37,54 +36,52 @@ private:
 
 	// grid
 	GLuint vertGridVao;
-	GLuint vertGridVbo;
 	GLuint horzGridVao;
+	GLuint vertGridVbo;
 	GLuint horzGridVbo;
 	OglShaderProgram gridShaderProg;
 	bool gridLinesOn = false;
 
 	// cells
-	GLuint cellStatesVao = 0;
-	GLuint cellStatesVbo = 0;
-	GLuint cellTranslationVbo = 0;
-	unsigned int cellVertexDataElements = rows * cols * 5; // 2 floats for translation + 3 floats for color = 5
+	GLuint cellStatesVao;
+	GLuint cellModelVbo;
+	GLuint cellTranslationVbo;
+	OglShaderProgram cellShaderProg;
 	GLfloat xInc = 1.0f / cols;
 	GLfloat yInc = 1.0f / rows;
 	std::vector<GLfloat> cellVertexData;
-	OglShaderProgram cellShaderProg;
 	bool pointMode = false;
-	GLfloat cellQuadVertices[12];
-	GLfloat cellPointVertices[2];
 
 	// attractor vectors
+	GLuint attractorVectorVao;
+	GLuint attractorVectorModelVbo;
+	GLuint attractorVectorTransformVbo;
 	OglShaderProgram attractorVectorShaderProg;
-	GLfloat attractorVectorVertices[4];
 	std::vector<glm::mat4> attractorVectorTransformData;
-	GLuint attractorVectorVao = 0;
-	GLuint attractorVectorModelVbo = 0;
-	GLuint attractorVectorTransformVbo = 0;
 	unsigned int attractorVectorIndex;
 	bool attractorVectorsOn = false;
 
 	// CA workbench variables
 	unsigned int screenShotId = 0;
 	bool renderComplete = false;
+	static CaWorkbench* theCaWorkbench;
 	RandomBooleanNetwork* rbn;
 	static RandomBooleanNetwork* theRbn;
-	static CaWorkbench* theCaWorkbench;
 	bool paused = false;
 
 	// member functions
-	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
-	void initGridGeometry();
-	void updateRenderState();
 	void initGlWindow();
 	void initShaders();
+	void initGridGeometry();
+	void initCellGeometry();
+	void initAttractorVectorGeometry();
 	void updateCellStates();
+	void updateRenderState();
 	void toggleGridLines();
-	void screenShot();
-	void togglePaused();
 	void toggleAttractorVectors();
+	void togglePaused();
+	void screenShot();
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 };
 
 #endif

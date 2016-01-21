@@ -2,52 +2,27 @@
 
 using namespace std;
 
-RandomBooleanNetwork* CaWorkbench::theRbn;
 CaWorkbench* CaWorkbench::theCaWorkbench;
+RandomBooleanNetwork* CaWorkbench::theRbn;
 
 CaWorkbench::CaWorkbench()
 {
+	// initialize OpenGL and object geometry
 	initGlWindow();
 	initShaders();
-	unsigned int connectivity = 3;
-	rbn = new RandomBooleanNetwork(rows, cols, connectivity, 84, 20, 20, false, true);
-	theRbn = rbn;
+	initGridGeometry();
+	initCellGeometry();
+	initAttractorVectorGeometry();
 	theCaWorkbench = this;
+
+	// workbench unit - debug, generalize
+	unsigned int connectivity = 3;
+	rbn = new RandomBooleanNetwork(rows, cols, connectivity, 5, 5, 5, false, true);
+	theRbn = rbn;
 	
-	cellVertexData.resize(cellVertexDataElements);
+	// do something with these
+	cellVertexData.resize(rows * cols * 5); // 2 floats for translation + 3 floats for color = 5
 	attractorVectorTransformData.resize(rows * cols * connectivity * 2);
-
-	// cell quad vertices for drawing as triangles
-	cellQuadVertices[0] = 0.0f;
-	cellQuadVertices[1] = 0.0f;  // left triangle bottom left
-	cellQuadVertices[2] = 0.0f;
-	cellQuadVertices[3] = yInc;  // left triangle top left
-	cellQuadVertices[4] = xInc;
-	cellQuadVertices[5] = yInc;  // left triangle top right
-	cellQuadVertices[6] = 0.0f;
-	cellQuadVertices[7] = 0.0f;  // right triangle bottom left
-	cellQuadVertices[8] = xInc;
-	cellQuadVertices[9] = yInc;  // right triangle top right
-	cellQuadVertices[10] = xInc;
-	cellQuadVertices[11] = 0.0f;  // right triangle bottom right
-
-	// point vertices for drawing as points
-	cellPointVertices[0] = xInc / 2.0f;
-	cellPointVertices[1] = yInc / 2.0f;
-
-	// attractor vector vertices for drawing as lines
-	attractorVectorVertices[0] = 0.0f;     // tail x
-	attractorVectorVertices[1] = 0.0f;     // tail y
-	attractorVectorVertices[2] = 1.0f;     // head x
-	attractorVectorVertices[3] = 0.0f;     // head y
-	//attractorVectorVertices[4] = 0.0f;   // arrow segment 1 start x
-	//attractorVectorVertices[5] = 0.0f;   // arrow segment 1 start y
-	//attractorVectorVertices[6] = 0.0f;     // arrow segment 1 end x
-	//attractorVectorVertices[7] = 0.0f;     // arrow segment 1 end y
-	//attractorVectorVertices[8] = 0.0f;   // arrow segment 2 start x
-	//attractorVectorVertices[9] = 0.0f;  // arrow segment 2 start y
-	//attractorVectorVertices[10] = 0.0f;    // arrow segment 2 end x
-	//attractorVectorVertices[11] = 0.0f;    // arrow segment 2 end y
 }
 
 void CaWorkbench::initGlWindow()
@@ -64,7 +39,6 @@ void CaWorkbench::initGlWindow()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	//	glfwWindowHint(GLFW_SAMPLES, 4);
 
 	glWindow = glfwCreateWindow(GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT, "CA Workbench", nullptr, nullptr);
 	if (glWindow == nullptr) {
@@ -90,16 +64,11 @@ void CaWorkbench::initGlWindow()
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+	// enable face culling since we're only going to render in 2d
 	glCullFace(GL_FRONT);
 	glEnable(GL_CULL_FACE);
 
-	if (pointMode) {
-		glPointSize(GL_WINDOW_WIDTH / cols);
-	}
-
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-
-	initGridGeometry();
 }
 
 void CaWorkbench::initShaders()
@@ -194,83 +163,177 @@ void CaWorkbench::initShaders()
 	attractorVectorShaderProg.build();
 }
 
-void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
+void CaWorkbench::initGridGeometry()
 {
-	// debug, split these up into static functions owned by RBN and CaWorkbench to handle their own things
-	if (action == GLFW_PRESS) {
-		switch(key){
-			case GLFW_KEY_ESCAPE:
-				glfwSetWindowShouldClose(window, GL_TRUE);
-				break;
-			case GLFW_KEY_SPACE:
-				theRbn->resetCellStates();
-				break;
-			case GLFW_KEY_R:
-				theRbn->updateInputSites();
-				break;
-			case GLFW_KEY_F:
-				theRbn->feedForward();
-				break;
-			case GLFW_KEY_T:
-				theRbn->toggleAutoFeedForward();
-				break;
-			case GLFW_KEY_A:
-				theRbn->toggleAutoNewInput();
-				break;
-			case GLFW_KEY_G:
-				theCaWorkbench->toggleGridLines();
-				break;
-			case GLFW_KEY_UP:
-				if (theRbn->setConnectivity(theRbn->getConnectivity() + 1)) {
-					theCaWorkbench->attractorVectorTransformData.resize(rows * cols * theRbn->getConnectivity() * 2);
-				}
-				break;
-			case GLFW_KEY_DOWN:
-				if (theRbn->setConnectivity(theRbn->getConnectivity() - 1)) {
-					theCaWorkbench->attractorVectorTransformData.resize(rows * cols * theRbn->getConnectivity() * 2);
-				}
-				break;
-			case GLFW_KEY_LEFT:
-				theRbn->setNeighborhoodConnections(false);
-				break;
-			case GLFW_KEY_RIGHT:
-				theRbn->setNeighborhoodConnections(true);
-				break;
-			case GLFW_KEY_KP_1:
-				theRbn->decrementExternalInputRows();
-				break;
-			case GLFW_KEY_KP_7:
-				theRbn->incrementExternalInputRows();
-				break;
-			case GLFW_KEY_KP_2:
-				theRbn->decrementFeedbackInputRows();
-				break;
-			case GLFW_KEY_KP_8:
-				theRbn->incrementFeedbackInputRows();
-				break;
-			case GLFW_KEY_KP_3:
-				theRbn->decrementExternalOutputRows();
-				break;
-			case GLFW_KEY_KP_9:
-				theRbn->incrementExternalOutputRows();
-				break;
-			case GLFW_KEY_INSERT:
-				theRbn->shiftInputData(0);
-				break;
-			case GLFW_KEY_PRINT_SCREEN:
-				theCaWorkbench->screenShot();
-				break;
-			case GLFW_KEY_PAUSE:
-				theCaWorkbench->togglePaused();
-				break;
-			case GLFW_KEY_V:
-				theCaWorkbench->toggleAttractorVectors();
-				break;
-			case GLFW_KEY_I:
-				theRbn->toggleFadeInactiveSites();
-				break;
-		}
+	// initialize buffers and vertex array object
+	GLuint vertTranslationVbo;
+	GLuint horzTranslationVbo;
+	glGenVertexArrays(1, &vertGridVao);
+	glGenVertexArrays(1, &horzGridVao);
+	glGenBuffers(1, &vertGridVbo);
+	glGenBuffers(1, &vertTranslationVbo);
+	glGenBuffers(1, &horzGridVbo);
+	glGenBuffers(1, &horzTranslationVbo);
+
+	// buffer vertical grid line model
+	GLfloat verticalLineVertices[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	glBindBuffer(GL_ARRAY_BUFFER, vertGridVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticalLineVertices), verticalLineVertices, GL_STATIC_DRAW);
+
+	// buffer vertical grid line translations
+	int vertTranslationIndex = 0;
+	glm::vec2 verticalGridLineTranslations[cols];
+	GLfloat fInc = 1.0f / cols;
+	for (unsigned int i = 0; i < cols; i++)
+	{
+		glm::vec2 translation;
+		translation.x = i * fInc;
+		translation.y = 0.0f;
+		verticalGridLineTranslations[vertTranslationIndex++] = translation;
 	}
+	glBindBuffer(GL_ARRAY_BUFFER, vertTranslationVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * cols, &verticalGridLineTranslations[0], GL_STATIC_DRAW);
+
+	// start vertex array object setup
+	glBindVertexArray(vertGridVao);
+
+	// define position attribute (model)
+	glBindBuffer(GL_ARRAY_BUFFER, vertGridVbo);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// define offset attribute (instanced)
+	glBindBuffer(GL_ARRAY_BUFFER, vertTranslationVbo);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribDivisor(1, 1);
+	glEnableVertexAttribArray(1);
+
+	// end vertex array object setup
+	glBindVertexArray(0);
+
+	// buffer horizontal grid line vertices
+	GLfloat horizontalLineVertices[] = { 0.0f, 0.0f, 1.0f, 0.0f };
+	glBindBuffer(GL_ARRAY_BUFFER, horzGridVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(horizontalLineVertices), horizontalLineVertices, GL_STATIC_DRAW);
+
+	// buffer horizontal grid line translations
+	int horzTranslationIndex = 0;
+	glm::vec2 horizontalGridLineTranslations[rows];
+	fInc = 1.0f / rows;
+	for (unsigned int i = 0; i < rows; i++)
+	{
+		glm::vec2 translation;
+		translation.x = 0.0f;
+		translation.y = i * fInc;
+		horizontalGridLineTranslations[horzTranslationIndex++] = translation;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, horzTranslationVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * rows, &horizontalGridLineTranslations[0], GL_STATIC_DRAW);
+
+	// start vertex array object setup
+	glBindVertexArray(horzGridVao);
+
+	// define position attribute (model)
+	glBindBuffer(GL_ARRAY_BUFFER, horzGridVbo);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// define offset attribute (instanced)
+	glBindBuffer(GL_ARRAY_BUFFER, horzTranslationVbo);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribDivisor(1, 1);
+	glEnableVertexAttribArray(1);
+
+	// end vertex array object setup
+	glBindVertexArray(0);
+}
+
+void CaWorkbench::initCellGeometry() {
+
+	// init buffers and vertex array object
+	glGenVertexArrays(1, &cellStatesVao);
+	glGenBuffers(1, &cellModelVbo);
+	glGenBuffers(1, &cellTranslationVbo);
+
+	// buffer cell model data
+	glBindBuffer(GL_ARRAY_BUFFER, cellModelVbo);
+	if (pointMode) {
+		// point vertices for drawing as points
+		GLfloat cellModelPointVertices[] = {xInc / 2.0f, yInc / 2.0f};
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cellModelPointVertices), cellModelPointVertices, GL_STATIC_DRAW);
+		glPointSize(GL_WINDOW_WIDTH / cols);
+	}
+	else {
+		// cell quad vertices for drawing as triangles
+		GLfloat cellModelQuadVertices[] = {
+			0.0f, 0.0f,  // left triangle bottom left
+			0.0f, yInc,  // left triangle top left
+			xInc, yInc,  // left triangle top right
+			0.0f, 0.0f,  // right triangle bottom left
+			xInc, yInc,  // right triangle top right
+			xInc, 0.0f   // right triangle bottom right
+		};
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cellModelQuadVertices), cellModelQuadVertices, GL_STATIC_DRAW);
+	}
+
+	// start vertex array object setup
+	glBindVertexArray(cellStatesVao);
+
+	// define position attribute (model)
+	glBindBuffer(GL_ARRAY_BUFFER, cellModelVbo);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// define offset attribute (instanced)
+	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribDivisor(1, 1);
+	glEnableVertexAttribArray(1);
+
+	// define color attribute (instanced)
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+	glVertexAttribDivisor(2, 1);
+	glEnableVertexAttribArray(2);
+
+	// end vertex array object setup
+	glBindVertexArray(0);
+}
+
+void CaWorkbench::initAttractorVectorGeometry() {
+
+	// init buffers and vertex array object
+	glGenVertexArrays(1, &attractorVectorVao);
+	glGenBuffers(1, &attractorVectorModelVbo);
+	glGenBuffers(1, &attractorVectorTransformVbo);
+
+	// buffer attractor vector model
+	GLfloat attractorVectorVertices[] = {
+		0.0f, // tail x
+		0.0f, // tail y
+		1.0f, // head x
+		0.0f  // head y
+	};
+	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorModelVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(attractorVectorVertices), attractorVectorVertices, GL_STATIC_DRAW);
+
+	// start vertex array object setup
+	glBindVertexArray(attractorVectorVao);
+
+	// define position attribute (model)
+	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorModelVbo);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// define attractor transform attribute (instanced)
+	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
+	for (unsigned int i = 1; i <= 4; i++) {   // don't really understand binding the matrix 4 times... need to figure it out
+		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)((i - 1) * sizeof(glm::vec4)));
+		glVertexAttribDivisor(i, 1);
+		glEnableVertexAttribArray(i);
+	}
+	
+	// end vertex array object setup
+	glBindVertexArray(0);
 }
 
 void CaWorkbench::doRenderLoop()
@@ -292,150 +355,25 @@ void CaWorkbench::doRenderLoop()
 	}
 
 	// cleanup
+	glDeleteBuffers(1, &cellModelVbo);
+	glDeleteBuffers(1, &cellTranslationVbo);
+	glDeleteBuffers(1, &attractorVectorModelVbo);
+	glDeleteBuffers(1, &attractorVectorTransformVbo);
 	glDeleteBuffers(1, &vertGridVbo);
 	glDeleteBuffers(1, &horzGridVbo);
+	glDeleteVertexArrays(1, &cellStatesVao);
+	glDeleteVertexArrays(1, &attractorVectorVao);
 	glDeleteVertexArrays(1, &vertGridVao);
 	glDeleteVertexArrays(1, &horzGridVao);
-
-	// delete other vaos, vbos?
-
 
 	// close window
 	glfwTerminate();
 }
 
-void CaWorkbench::initGridGeometry()
-{
-	// vertical grid line translations
-	int vertTranslationIndex = 0;
-	glm::vec2 verticalGridLineTranslations[cols];
-	GLfloat fInc = 1.0f / cols;
-	for (unsigned int i = 0; i < cols; i++)
-	{
-		glm::vec2 translation;
-		translation.x = i * fInc;
-		translation.y = 0.0f;
-		verticalGridLineTranslations[vertTranslationIndex++] = translation;
-	}
-	GLuint vertTranslationVbo;
-	glGenBuffers(1, &vertTranslationVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vertTranslationVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * cols, &verticalGridLineTranslations[0], GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// vertical grid line vertices
-	GLfloat verticalLineVertices[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	glGenVertexArrays(1, &vertGridVao);
-	glGenBuffers(1, &vertGridVbo);
-	glBindVertexArray(vertGridVao);
-	glBindBuffer(GL_ARRAY_BUFFER, vertGridVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verticalLineVertices), verticalLineVertices, GL_STATIC_DRAW);
-
-	// define position attribute
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-
-	// define offset attribute (instanced)
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, vertTranslationVbo);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glVertexAttribDivisor(1, 1);
-	glBindVertexArray(0);
-
-	// horizontal grid line translations
-	int horzTranslationIndex = 0;
-	glm::vec2 horizontalGridLineTranslations[rows];
-	fInc = 1.0f / rows;
-	for (unsigned int i = 0; i < rows; i++)
-	{
-		glm::vec2 translation;
-		translation.x = 0.0f;
-		translation.y = i * fInc;
-		horizontalGridLineTranslations[horzTranslationIndex++] = translation;
-	}
-	GLuint horzTranslationVbo;
-	glGenBuffers(1, &horzTranslationVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, horzTranslationVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * rows, &horizontalGridLineTranslations[0], GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// horizontal grid line vertices
-	GLfloat horizontalLineVertices[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-	glGenVertexArrays(1, &horzGridVao);
-	glGenBuffers(1, &horzGridVbo);
-	glBindVertexArray(horzGridVao);
-	glBindBuffer(GL_ARRAY_BUFFER, horzGridVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(horizontalLineVertices), horizontalLineVertices, GL_STATIC_DRAW);
-
-	// define position attribute
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-
-	// define offset attribute (instanced)
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, horzTranslationVbo);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glVertexAttribDivisor(1, 1);
-	glBindVertexArray(0);
-}
-
-void CaWorkbench::updateRenderState()
-{
-	// clear current frame
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	// draw cell states
-	cellShaderProg.use();
-	glBindVertexArray(cellStatesVao);
-	if (pointMode)
-		glDrawArraysInstanced(GL_POINTS, 0, 1, rows * cols);
-	else
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
-
-	// draw grid
-	if(gridLinesOn){
-		gridShaderProg.use();
-		glBindVertexArray(vertGridVao);
-		glDrawArraysInstanced(GL_LINES, 0, 2, cols);
-		glBindVertexArray(horzGridVao);
-		glDrawArraysInstanced(GL_LINES, 0, 2, rows);
-	}
-
-	// draw attractor vectors
-	if(attractorVectorsOn){
-		attractorVectorShaderProg.use();
-		glBindVertexArray(attractorVectorVao);
-		glDrawArraysInstanced(GL_LINES, 0, 2, attractorVectorIndex);
-	}
-
-	// unbinds for safety
-	glBindVertexArray(0);
-
-	// publish frame
-	glfwSwapBuffers(glWindow);
-
-	// clean up allocated vertex arrays and buffers
-	glDeleteVertexArrays(1, &cellStatesVao);
-	glDeleteVertexArrays(1, &attractorVectorVao);
-	glDeleteBuffers(1, &cellTranslationVbo);
-	glDeleteBuffers(1, &cellStatesVbo);
-	glDeleteBuffers(1, &attractorVectorTransformVbo);
-	glDeleteBuffers(1, &attractorVectorModelVbo);
-}
-
 void CaWorkbench::updateCellStates()
 {
 	// iterate logical state
-	//std::string sectionTimeString;
-	//UINT64 sectionTimeStart = getSystemTimeNanos();
 	renderComplete = rbn->iterate();
-	//uint64ToString(getSystemTimeNanos() - sectionTimeStart, sectionTimeString);
-	//cout << "RBN logical state updated in " << sectionTimeString << "ns" << endl;
-
-	//std::string sectionTimeString2;
-	//UINT64 sectionTimeStart2 = getSystemTimeNanos();
 
 	// update rendering data from logical data
 	std::vector<Site>* sites = rbn->getSites();
@@ -471,7 +409,7 @@ void CaWorkbench::updateCellStates()
 			cellVertexData[cellVertexIndex++] = color->at(0);
 			cellVertexData[cellVertexIndex++] = color->at(1);
 			cellVertexData[cellVertexIndex++] = color->at(2);
-			
+
 			// attractor vectors
 			if (attractorVectorsOn && s->freshActivation) {
 				glm::vec2 thisSitePosition(((transX + (xInc / 2.0f)) * 2.0f) - 1.0f, ((transY + (yInc / 2.0f)) * 2.0f) - 1.0f);
@@ -486,14 +424,14 @@ void CaWorkbench::updateCellStates()
 					unsigned int outputSiteId = s->outputSiteIds[outputSiteIndex];
 					unsigned int outputSiteRow = rows - (outputSiteId / cols) - 1;
 					unsigned int outputSiteCol = outputSiteId % cols;
-					glm::vec2 outputSitePosition((((outputSiteCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((outputSiteRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
+					glm::vec2 outputSitePosition((((outputSiteCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f,
+						(((outputSiteRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
 					GLfloat distance = glm::distance(thisSitePosition, outputSitePosition);
-//					cout << "site " << s->siteId << "(" << thisSitePosition.x << ", " << thisSitePosition.y << ") points to site "
-	//					<< outputSiteId << "(" << outputSitePosition.x << ", " << outputSitePosition.y << ")" << " distance = " << distance << endl;
 					transform = glm::scale(transform, glm::vec3(distance, distance, 1.0f));
 
 					// rotate to point to output site
-					GLfloat theta = angleBetweenVectors(glm::vec2(1.0f, 0.0f), glm::vec2(outputSitePosition.x - thisSitePosition.x, outputSitePosition.y - thisSitePosition.y));
+					GLfloat theta = angleBetweenVectors(glm::vec2(1.0f, 0.0f), glm::vec2(outputSitePosition.x - thisSitePosition.x,
+						outputSitePosition.y - thisSitePosition.y));
 					transform = glm::rotate(transform, theta, glm::vec3(0.0f, 0.0f, 1.0f));
 
 					attractorVectorTransformData[attractorVectorIndex++] = transform;
@@ -504,85 +442,61 @@ void CaWorkbench::updateCellStates()
 		}
 	}
 
-	//cout << endl << endl;
-
-	// buffer cell translation and color vertex data
-	glGenBuffers(1, &cellTranslationVbo);
+	// buffer cell vertex translation and color data
 	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellVertexDataElements, cellVertexData.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellVertexData.size(), cellVertexData.data(), GL_STATIC_DRAW);
 
-	glGenVertexArrays(1, &cellStatesVao);
-	glGenBuffers(1, &cellStatesVbo);
-	glBindVertexArray(cellStatesVao);
-	glBindBuffer(GL_ARRAY_BUFFER, cellStatesVbo);
-	if(pointMode)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cellPointVertices), cellPointVertices, GL_STATIC_DRAW);
-	else
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cellQuadVertices), cellQuadVertices, GL_STATIC_DRAW);
-
-	// define position attribute
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	// define offset attribute (instanced)
-	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribDivisor(1, 1);
-
-	// define color attribute (instanced)
-	glBindBuffer(GL_ARRAY_BUFFER, cellTranslationVbo);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribDivisor(2, 1);
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// buffer attractor vector transform data
 	if (attractorVectorsOn) {
-		// attractor vector transform data
-		glGenBuffers(1, &attractorVectorTransformVbo);
 		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * attractorVectorIndex, attractorVectorTransformData.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+}
 
-		glGenVertexArrays(1, &attractorVectorVao);
-		glGenBuffers(1, &attractorVectorModelVbo);
-		glBindVertexArray(attractorVectorVao);
-		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorModelVbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(attractorVectorVertices), attractorVectorVertices, GL_STATIC_DRAW);
+void CaWorkbench::updateRenderState()
+{
+	// clear current frame
+	glClear(GL_COLOR_BUFFER_BIT);
 
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
+	// draw cell states
+	cellShaderProg.use();
+	glBindVertexArray(cellStatesVao);
+	if (pointMode)
+		glDrawArraysInstanced(GL_POINTS, 0, 1, rows * cols);
+	else
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
 
-		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribDivisor(1, 1);
-
-		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
-		glEnableVertexAttribArray(2);
-		glVertexAttribDivisor(2, 1);
-
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
-		glEnableVertexAttribArray(3);
-		glVertexAttribDivisor(3, 1);
-
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
-		glEnableVertexAttribArray(4);
-		glVertexAttribDivisor(4, 1);
+	// draw grid
+	if(gridLinesOn){
+		gridShaderProg.use();
+		glBindVertexArray(vertGridVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, cols);
+		glBindVertexArray(horzGridVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, rows);
 	}
 
-	// unbinds for safety
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// draw attractor vectors
+	if(attractorVectorsOn){
+		attractorVectorShaderProg.use();
+		glBindVertexArray(attractorVectorVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, attractorVectorIndex);
+	}
 
-	//uint64ToString(getSystemTimeNanos() - sectionTimeStart2, sectionTimeString2);
-	//cout << "render data state updated in " << sectionTimeString2 << "ns" << endl;
+	// publish frame
+	glfwSwapBuffers(glWindow);
 }
 
 void CaWorkbench::toggleGridLines() {
 	cout << "setting grid lines " << (gridLinesOn ? "off" : "on") << endl;
 	gridLinesOn = !gridLinesOn;
+}
+
+void CaWorkbench::toggleAttractorVectors() {
+	attractorVectorsOn = !attractorVectorsOn;
+}
+
+void CaWorkbench::togglePaused() {
+	paused = !paused;
 }
 
 void CaWorkbench::screenShot() {
@@ -597,18 +511,88 @@ void CaWorkbench::screenShot() {
 		filename.c_str(),
 		SOIL_SAVE_TYPE_BMP,
 		0, 0, GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT
-	);
+		);
 
-	if(saveResult != 1)
+	if (saveResult != 1)
 		cout << "unkown error saving screenshot" << endl;
 }
 
-void CaWorkbench::togglePaused() {
-	paused = !paused;
-}
-
-void CaWorkbench::toggleAttractorVectors() {
-	attractorVectorsOn = !attractorVectorsOn;
+void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+	// debug, split these up into static functions owned by RBN and CaWorkbench to handle their own things
+	if (action == GLFW_PRESS) {
+		switch (key) {
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
+			break;
+		case GLFW_KEY_SPACE:
+			theRbn->resetCellStates();
+			break;
+		case GLFW_KEY_R:
+			theRbn->updateInputSites();
+			break;
+		case GLFW_KEY_F:
+			theRbn->feedForward();
+			break;
+		case GLFW_KEY_T:
+			theRbn->toggleAutoFeedForward();
+			break;
+		case GLFW_KEY_A:
+			theRbn->toggleAutoNewInput();
+			break;
+		case GLFW_KEY_G:
+			theCaWorkbench->toggleGridLines();
+			break;
+		case GLFW_KEY_UP:
+			if (theRbn->setConnectivity(theRbn->getConnectivity() + 1)) {
+				theCaWorkbench->attractorVectorTransformData.resize(rows * cols * theRbn->getConnectivity() * 2);
+			}
+			break;
+		case GLFW_KEY_DOWN:
+			if (theRbn->setConnectivity(theRbn->getConnectivity() - 1)) {
+				theCaWorkbench->attractorVectorTransformData.resize(rows * cols * theRbn->getConnectivity() * 2);
+			}
+			break;
+		case GLFW_KEY_LEFT:
+			theRbn->setNeighborhoodConnections(false);
+			break;
+		case GLFW_KEY_RIGHT:
+			theRbn->setNeighborhoodConnections(true);
+			break;
+		case GLFW_KEY_KP_1:
+			theRbn->decrementExternalInputRows();
+			break;
+		case GLFW_KEY_KP_7:
+			theRbn->incrementExternalInputRows();
+			break;
+		case GLFW_KEY_KP_2:
+			theRbn->decrementFeedbackInputRows();
+			break;
+		case GLFW_KEY_KP_8:
+			theRbn->incrementFeedbackInputRows();
+			break;
+		case GLFW_KEY_KP_3:
+			theRbn->decrementExternalOutputRows();
+			break;
+		case GLFW_KEY_KP_9:
+			theRbn->incrementExternalOutputRows();
+			break;
+		case GLFW_KEY_INSERT:
+			theRbn->shiftInputData(0);
+			break;
+		case GLFW_KEY_PRINT_SCREEN:
+			theCaWorkbench->screenShot();
+			break;
+		case GLFW_KEY_PAUSE:
+			theCaWorkbench->togglePaused();
+			break;
+		case GLFW_KEY_V:
+			theCaWorkbench->toggleAttractorVectors();
+			break;
+		case GLFW_KEY_I:
+			theRbn->toggleFadeInactiveSites();
+			break;
+		}
+	}
 }
 
 CaWorkbench::~CaWorkbench()
