@@ -57,6 +57,7 @@ public:
 	void feedForward();
 	void toggleAutoFeedForward();
 	void toggleAutoNewInput();
+	void toggleFadeInactiveSites();
 	unsigned int getConnectivity();
 	std::vector<Site>* getSites();
 
@@ -78,6 +79,7 @@ private:
 	bool neighborhoodConnections;
 	bool autoFeedForward;
 	bool autoNewInput = false;
+	bool fadeInactiveSites = true;
 
 	unsigned int externalInputStartCellIndex;
 	unsigned int externalInputEndCellIndex;

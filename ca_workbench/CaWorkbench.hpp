@@ -17,10 +17,10 @@
 
 const GLuint GL_WINDOW_WIDTH = 1800;
 const GLuint GL_WINDOW_HEIGHT = 900;
-//const unsigned int rows = 300;
-//const unsigned int cols = 600;
-const unsigned int rows = 10;
-const unsigned int cols = 10;
+const unsigned int rows = 300;
+const unsigned int cols = 600;
+//const unsigned int rows = 800;
+//const unsigned int cols = 1600;
 const GLuint cellStatesVertexCount = rows * cols * 6;
 const string SCREENSHOT_SAVE_DIRECTORY = "c:\\ca_workbench_screenshots\\";
 
@@ -58,12 +58,13 @@ private:
 
 	// attractor vectors
 	OglShaderProgram attractorVectorShaderProg;
-	GLfloat attractorVectorVertices[12];
+	GLfloat attractorVectorVertices[4];
 	std::vector<glm::mat4> attractorVectorTransformData;
 	GLuint attractorVectorVao = 0;
 	GLuint attractorVectorModelVbo = 0;
 	GLuint attractorVectorTransformVbo = 0;
 	unsigned int attractorVectorIndex;
+	bool attractorVectorsOn = false;
 
 	// CA workbench variables
 	unsigned int screenShotId = 0;
@@ -83,6 +84,7 @@ private:
 	void toggleGridLines();
 	void screenShot();
 	void togglePaused();
+	void toggleAttractorVectors();
 };
 
 #endif

@@ -119,10 +119,9 @@ void RandomBooleanNetwork::resetCellStates()
 			s.color[0] = 0.0f;
 			s.color[1] = 1.0f;
 			s.color[2] = 0.0f;
-			s.freshActivation = s.currentState;
 		}
 		else if (i >= externalOutputStartCellIndex && i <= externalOutputEndCellIndex) { // external output site, red
-		   // choose random boolean function
+		    // choose random boolean function
 			s.booleanFunctionId = randBooleanFunctionDist(rnGen);
 
 			// color red
@@ -401,24 +400,26 @@ bool RandomBooleanNetwork::iterate()
 		}
 		else {
 
-			// update cell color to fade out as it's non-updated age increases
-			if (i >= externalOutputStartCellIndex) {  // external output cells
-				float newColor = s->color.at(1) + 0.01f;
-				if (newColor > 1.0f)
-					newColor = 1.0f;
+			if (fadeInactiveSites) {
+				// update cell color to fade out as it's non-updated age increases
+				if (i >= externalOutputStartCellIndex) {  // external output cells
+					float newColor = s->color.at(1) + 0.01f;
+					if (newColor > 1.0f)
+						newColor = 1.0f;
 
-				s->color.at(0) = 1.0f;
-				s->color.at(1) = newColor;
-				s->color.at(2) = newColor;
-			}
-			else { // internal cells
-				float newColor = s->color.at(0) + 0.01f;
-				if (newColor > 1.0f)
-					newColor = 1.0f;
+					s->color.at(0) = 1.0f;
+					s->color.at(1) = newColor;
+					s->color.at(2) = newColor;
+				}
+				else { // internal cells
+					float newColor = s->color.at(0) + 0.01f;
+					if (newColor > 1.0f)
+						newColor = 1.0f;
 
-				s->color.at(0) = newColor;
-				s->color.at(1) = newColor;
-				s->color.at(2) = newColor;
+					s->color.at(0) = newColor;
+					s->color.at(1) = newColor;
+					s->color.at(2) = newColor;
+				}
 			}
 
 			s->freshActivation = false;
@@ -587,6 +588,10 @@ void RandomBooleanNetwork::toggleAutoFeedForward() {
 void RandomBooleanNetwork::toggleAutoNewInput() {
 	autoNewInput = !autoNewInput;
 	printConfigurationState();
+}
+
+void RandomBooleanNetwork::toggleFadeInactiveSites() {
+	fadeInactiveSites = !fadeInactiveSites;
 }
 
 unsigned int RandomBooleanNetwork::getConnectivity() {

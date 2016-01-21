@@ -9,9 +9,8 @@ CaWorkbench::CaWorkbench()
 {
 	initGlWindow();
 	initShaders();
-	unsigned int connectivity = 2;
-	//rbn = new RandomBooleanNetwork(rows, cols, connectivity, 84, 20, 20, false, true);
-	rbn = new RandomBooleanNetwork(rows, cols, connectivity, 1, 0, 0, true, false);
+	unsigned int connectivity = 3;
+	rbn = new RandomBooleanNetwork(rows, cols, connectivity, 84, 20, 20, false, true);
 	theRbn = rbn;
 	theCaWorkbench = this;
 	
@@ -41,14 +40,14 @@ CaWorkbench::CaWorkbench()
 	attractorVectorVertices[1] = 0.0f;     // tail y
 	attractorVectorVertices[2] = 1.0f;     // head x
 	attractorVectorVertices[3] = 0.0f;     // head y
-	attractorVectorVertices[4] = 0.875f;   // arrow segment 1 start x
-	attractorVectorVertices[5] = 0.125f;   // arrow segment 1 start y
-	attractorVectorVertices[6] = 1.0f;     // arrow segment 1 end x
-	attractorVectorVertices[7] = 0.0f;     // arrow segment 1 end y
-	attractorVectorVertices[8] = 0.875f;   // arrow segment 2 start x
-	attractorVectorVertices[9] = -0.125f;  // arrow segment 2 start y
-	attractorVectorVertices[10] = 1.0f;    // arrow segment 2 end x
-	attractorVectorVertices[11] = 0.0f;    // arrow segment 2 end y
+	//attractorVectorVertices[4] = 0.0f;   // arrow segment 1 start x
+	//attractorVectorVertices[5] = 0.0f;   // arrow segment 1 start y
+	//attractorVectorVertices[6] = 0.0f;     // arrow segment 1 end x
+	//attractorVectorVertices[7] = 0.0f;     // arrow segment 1 end y
+	//attractorVectorVertices[8] = 0.0f;   // arrow segment 2 start x
+	//attractorVectorVertices[9] = 0.0f;  // arrow segment 2 start y
+	//attractorVectorVertices[10] = 0.0f;    // arrow segment 2 end x
+	//attractorVectorVertices[11] = 0.0f;    // arrow segment 2 end y
 }
 
 void CaWorkbench::initGlWindow()
@@ -264,6 +263,12 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 			case GLFW_KEY_PAUSE:
 				theCaWorkbench->togglePaused();
 				break;
+			case GLFW_KEY_V:
+				theCaWorkbench->toggleAttractorVectors();
+				break;
+			case GLFW_KEY_I:
+				theRbn->toggleFadeInactiveSites();
+				break;
 		}
 	}
 }
@@ -282,7 +287,7 @@ void CaWorkbench::doRenderLoop()
 				renderComplete = false;
 			}
 
-			std::this_thread::sleep_for(std::chrono::seconds(3));
+		//	std::this_thread::sleep_for(std::chrono::seconds(3));
 		}
 	}
 
@@ -399,9 +404,11 @@ void CaWorkbench::updateRenderState()
 	}
 
 	// draw attractor vectors
-	attractorVectorShaderProg.use();
-	glBindVertexArray(attractorVectorVao);
-	glDrawArraysInstanced(GL_LINES, 0, 6, attractorVectorIndex);
+	if(attractorVectorsOn){
+		attractorVectorShaderProg.use();
+		glBindVertexArray(attractorVectorVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, attractorVectorIndex);
+	}
 
 	// unbinds for safety
 	glBindVertexArray(0);
@@ -466,7 +473,7 @@ void CaWorkbench::updateCellStates()
 			cellVertexData[cellVertexIndex++] = color->at(2);
 			
 			// attractor vectors
-			if (s->freshActivation) {
+			if (attractorVectorsOn && s->freshActivation) {
 				glm::vec2 thisSitePosition(((transX + (xInc / 2.0f)) * 2.0f) - 1.0f, ((transY + (yInc / 2.0f)) * 2.0f) - 1.0f);
 				unsigned int outputSiteCount = s->outputSiteIds.size();
 				for (unsigned int outputSiteIndex = 0; outputSiteIndex < outputSiteCount; outputSiteIndex++) {
@@ -481,6 +488,8 @@ void CaWorkbench::updateCellStates()
 					unsigned int outputSiteCol = outputSiteId % cols;
 					glm::vec2 outputSitePosition((((outputSiteCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((outputSiteRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
 					GLfloat distance = glm::distance(thisSitePosition, outputSitePosition);
+//					cout << "site " << s->siteId << "(" << thisSitePosition.x << ", " << thisSitePosition.y << ") points to site "
+	//					<< outputSiteId << "(" << outputSitePosition.x << ", " << outputSitePosition.y << ")" << " distance = " << distance << endl;
 					transform = glm::scale(transform, glm::vec3(distance, distance, 1.0f));
 
 					// rotate to point to output site
@@ -494,6 +503,8 @@ void CaWorkbench::updateCellStates()
 			siteIterator++;
 		}
 	}
+
+	//cout << endl << endl;
 
 	// buffer cell translation and color vertex data
 	glGenBuffers(1, &cellTranslationVbo);
@@ -527,37 +538,39 @@ void CaWorkbench::updateCellStates()
 	glVertexAttribDivisor(2, 1);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// attractor vector transform data
-	glGenBuffers(1, &attractorVectorTransformVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * attractorVectorIndex, attractorVectorTransformData.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (attractorVectorsOn) {
+		// attractor vector transform data
+		glGenBuffers(1, &attractorVectorTransformVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * attractorVectorIndex, attractorVectorTransformData.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glGenVertexArrays(1, &attractorVectorVao);
-	glGenBuffers(1, &attractorVectorModelVbo);
-	glBindVertexArray(attractorVectorVao);
-	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorModelVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(attractorVectorVertices), attractorVectorVertices, GL_STATIC_DRAW);
+		glGenVertexArrays(1, &attractorVectorVao);
+		glGenBuffers(1, &attractorVectorModelVbo);
+		glBindVertexArray(attractorVectorVao);
+		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorModelVbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(attractorVectorVertices), attractorVectorVertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribDivisor(1, 1);
+		glBindBuffer(GL_ARRAY_BUFFER, attractorVectorTransformVbo);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribDivisor(1, 1);
 
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribDivisor(2, 1);
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribDivisor(2, 1);
 
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
-	glEnableVertexAttribArray(3);
-	glVertexAttribDivisor(3, 1);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
+		glEnableVertexAttribArray(3);
+		glVertexAttribDivisor(3, 1);
 
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
-	glEnableVertexAttribArray(4);
-	glVertexAttribDivisor(4, 1);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
+		glEnableVertexAttribArray(4);
+		glVertexAttribDivisor(4, 1);
+	}
 
 	// unbinds for safety
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -592,6 +605,10 @@ void CaWorkbench::screenShot() {
 
 void CaWorkbench::togglePaused() {
 	paused = !paused;
+}
+
+void CaWorkbench::toggleAttractorVectors() {
+	attractorVectorsOn = !attractorVectorsOn;
 }
 
 CaWorkbench::~CaWorkbench()
