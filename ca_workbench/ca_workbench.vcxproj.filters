@@ -30,13 +30,22 @@
     <ClCompile Include="Simplified1DCA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RandomBooleanNetwork.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AudioManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CaWorkbenchModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RandomBooleanNetworkModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Site.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RandomBooleanNetworkSite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,13 +62,22 @@
     <ClInclude Include="Simplified1DCA.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RandomBooleanNetwork.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AudioManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CaWorkbenchModule.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Site.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomBooleanNetworkModule.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomBooleanNetworkSite.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

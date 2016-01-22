@@ -1,13 +1,15 @@
 #include <iostream>
 #include "AudioManager.hpp"
 #include "CaWorkbench.hpp"
+#include "RandomBooleanNetworkModule.hpp"
 
 int main()
 {
 	try {
 		cout << "Starting CA Workbench" << endl;
 
-		CaWorkbench caWb = CaWorkbench();
+		CaWorkbenchModule* module = new RandomBooleanNetworkModule(200, 400, 3, 80, 10, 10, false, true);
+		CaWorkbench caWb = CaWorkbench(module);
 		caWb.doRenderLoop();
 
 		//AudioManager am = AudioManager();
