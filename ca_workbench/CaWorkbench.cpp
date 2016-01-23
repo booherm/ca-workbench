@@ -333,7 +333,7 @@ void CaWorkbench::doRenderLoop()
 	while (!glfwWindowShouldClose(glWindow)) {
 		glfwPollEvents();
 
-		if(!paused){
+		if(!paused) {
 			updateCellStates();
 			updateRenderState();
 		}
@@ -357,8 +357,11 @@ void CaWorkbench::doRenderLoop()
 
 void CaWorkbench::updateCellStates()
 {
+	if (module->getRenderComplete())
+		return;
+
 	// iterate logical state
-	renderComplete = module->iterate();
+	module->iterate();
 
 	// setup cell translation and color data
 	unsigned int cellTransformIndex = 0;
@@ -435,6 +438,7 @@ void CaWorkbench::updateCellStates()
 }
 
 void CaWorkbench::updateRenderState() {
+
 	// clear current frame
 	glClear(GL_COLOR_BUFFER_BIT);
 

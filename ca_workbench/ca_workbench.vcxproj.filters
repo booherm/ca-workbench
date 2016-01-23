@@ -24,12 +24,6 @@
     <ClCompile Include="OglShaderProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Wolfram1DCA.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Simplified1DCA.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,18 +42,15 @@
     <ClCompile Include="RandomBooleanNetworkSite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OneDimCaModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Wolfram1DCA.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CaWorkbench.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OglShaderProgram.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Simplified1DCA.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Util.hpp">
@@ -78,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RandomBooleanNetworkSite.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OneDimCaModule.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

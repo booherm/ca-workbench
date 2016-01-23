@@ -345,7 +345,7 @@ void RandomBooleanNetworkModule::setNeighborhoodConnections(bool neighborhoodCon
 	printConfigurationState();
 }
 
-bool RandomBooleanNetworkModule::iterate()
+void RandomBooleanNetworkModule::iterate()
 {
 	// update logical state
 
@@ -450,24 +450,21 @@ bool RandomBooleanNetworkModule::iterate()
 	}
 	unsigned int crcResultChecksum = crcResult.checksum();
 
-	// store checksum in set, returning whether or not a cycle has been detected yet
+	// store checksum in set, mark render complete if a cycle has been detected yet
 	iteration++;
-	bool stop = false;
 	std::set<unsigned int>::iterator csi = checkSums.find(crcResultChecksum);
 	if (csi == checkSums.end()) {
 		checkSums.insert(crcResultChecksum);
 	}
 	else {
 		cout << "Cycle detected on iteration " << std::to_string(iteration) << endl;
-		stop = true;
+		renderComplete = true;
 	}
 
-	if(stop){
+	if(renderComplete){
 		updateInputSites();
-		stop = false;
+		renderComplete = false;
 	}
-
-	return stop;
 }
 
 void RandomBooleanNetworkModule::incrementExternalInputRows() {

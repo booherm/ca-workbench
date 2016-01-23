@@ -3,7 +3,6 @@
 
 #include "CaWorkbenchModule.hpp"
 #include "RandomBooleanNetworkSite.hpp"
-#include <glfw3.h>
 #include <iostream>
 #include <random>
 #include <set>
@@ -26,28 +25,10 @@ public:
 	);
 
 	// public member functions
-	void resetCellStates();
-	bool setConnectivity(unsigned int connectivity);
-	void setNeighborhoodConnections(bool neighborhoodConnections);
-	void updateInputSites();
-	void shiftInputData(int offset);
-	bool iterate();
-	void incrementExternalInputRows();
-	void decrementExternalInputRows();
-	void incrementFeedbackInputRows();
-	void decrementFeedbackInputRows();
-	void incrementExternalOutputRows();
-	void decrementExternalOutputRows();
-	void feedForward();
-	void toggleAutoFeedForward();
-	void toggleAutoNewInput();
-	void toggleFadeInactiveSites();
+	void iterate();
 	Site* getSite(unsigned int siteId);
 	bool getSiteActive(unsigned int siteId);
 	std::vector<float>* getSiteColor(unsigned int siteId);
-
-	unsigned int getConnectivity();
-	void handleInputAction(int action, int key);
 
 	// destructor
 	~RandomBooleanNetworkModule();
@@ -73,7 +54,6 @@ private:
 	unsigned int internalEndCellIndex;
 	unsigned int externalOutputStartCellIndex;
 	unsigned int externalOutputEndCellIndex;
-	unsigned int iteration = 0;
 
 	// private member functions
 	void initialize(
@@ -86,6 +66,23 @@ private:
 		bool neighborhoodConnections,
 		bool autoFeedForward
 	);
+	unsigned int getConnectivity();
+	void resetCellStates();
+	bool setConnectivity(unsigned int connectivity);
+	void setNeighborhoodConnections(bool neighborhoodConnections);
+	void updateInputSites();
+	void shiftInputData(int offset);
+	void incrementExternalInputRows();
+	void decrementExternalInputRows();
+	void incrementFeedbackInputRows();
+	void decrementFeedbackInputRows();
+	void incrementExternalOutputRows();
+	void decrementExternalOutputRows();
+	void feedForward();
+	void toggleAutoFeedForward();
+	void toggleAutoNewInput();
+	void toggleFadeInactiveSites();
+	void handleInputAction(int action, int key);
 	void printConfigurationState();
 	void cleanUp();
 };

@@ -6,10 +6,12 @@ CaWorkbenchModule::CaWorkbenchModule(unsigned int rows, unsigned int cols) {
 
 	this->rows = rows;
 	this->cols = cols;
+	iteration = 0;
+	renderComplete = false;
 }
 
-bool CaWorkbenchModule::iterate() {
-	return true;
+void CaWorkbenchModule::iterate() {
+	iteration++;
 }
 
 void CaWorkbenchModule::handleInputAction(int action, int key) {
@@ -29,6 +31,10 @@ inline std::vector<float>* CaWorkbenchModule::getSiteColor(unsigned int siteId) 
 
 std::vector<unsigned int>* CaWorkbenchModule::getConnectionVectors() {
 	return &connectionVectors;
+}
+
+bool CaWorkbenchModule::getRenderComplete() {
+	return renderComplete;
 }
 
 unsigned int CaWorkbenchModule::getRowCount() {

@@ -55,7 +55,6 @@ private:
 
 	// CA workbench variables
 	unsigned int screenShotId = 0;
-	bool renderComplete = false;
 	static CaWorkbench* theCaWorkbench;
 	CaWorkbenchModule* module;
 	static CaWorkbenchModule* theModule;
