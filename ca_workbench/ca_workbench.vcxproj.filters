@@ -45,6 +45,15 @@
     <ClCompile Include="OneDimCaModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NeuralNetworkModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NeuronSite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CaWorkbench.hpp">
@@ -72,6 +81,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OneDimCaModule.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuralNetworkModule.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuronSite.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SiteConnection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTimer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

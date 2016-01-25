@@ -22,6 +22,8 @@ CaWorkbench::CaWorkbench(CaWorkbenchModule* caWorkbenchModule)
 	initGridGeometry();
 	initCellGeometry();
 	initVectorGeometry();
+
+	updateModuleRenderDataPt.setId("RENDER_PERF_TIMER");
 }
 
 void CaWorkbench::initGlWindow()
@@ -65,7 +67,12 @@ void CaWorkbench::initGlWindow()
 	glCullFace(GL_FRONT);
 	glEnable(GL_CULL_FACE);
 
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	// enable color alpha blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	glClearColor(0.941f, 0.941f, 0.941f, 0.0f);
 }
 
 void CaWorkbench::initShaders()
@@ -136,22 +143,27 @@ void CaWorkbench::initShaders()
 		"#version 330 core\n"
 		"\n"
 		"layout (location = 0) in vec2 position;\n"
-		"layout (location = 1) in mat4 instanceMatrix;\n"
+		"layout (location = 1) in vec4 inColor;\n"
+		"layout (location = 2) in mat4 instanceMatrix;\n"
+		"\n"
+		"out vec4 fragShaderColor;\n"
 		"\n"
 		"void main()\n"
 		"{\n"
 		"    gl_Position = instanceMatrix * vec4(position, 0.0f, 1.0f);\n"
+		"    fragShaderColor = inColor;\n"
 		"}\n";
 
 	// vector fragment shader
 	string vectorFragmentShaderSource =
 		"#version 330 core\n"
 		"\n"
+		"in vec4 fragShaderColor;\n"
 		"out vec4 color;\n"
 		"\n"
 		"void main()\n"
 		"{\n"
-		"    color = vec4(0.0f, 1.0f, 0.0f, 1.0f);\n"
+		"    color = fragShaderColor;\n"
 		"}\n";
 
 	vectorShaderProg = OglShaderProgram();
@@ -242,7 +254,8 @@ void CaWorkbench::initGridGeometry()
 void CaWorkbench::initCellGeometry() {
 
 	// init buffers and vertex array object
-	cellTransformData.resize(rows * cols * 5); // 2 floats for translation + 3 floats for color = 5
+	cellTransformDataSize = rows * cols * 5;   // 2 floats for translation + 3 floats for color = 5
+	cellTransformData.resize(cellTransformDataSize);
 	glGenVertexArrays(1, &cellStatesVao);
 	glGenBuffers(1, &cellModelVbo);
 	glGenBuffers(1, &cellTransformVbo);
@@ -267,6 +280,10 @@ void CaWorkbench::initCellGeometry() {
 		};
 		glBufferData(GL_ARRAY_BUFFER, sizeof(cellModelQuadVertices), cellModelQuadVertices, GL_STATIC_DRAW);
 	}
+
+	// initialize cell transform buffer
+	glBindBuffer(GL_ARRAY_BUFFER, cellTransformVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellTransformData.size(), NULL, GL_STREAM_DRAW);
 
 	// start vertex array object setup
 	glBindVertexArray(cellStatesVao);
@@ -296,6 +313,7 @@ void CaWorkbench::initVectorGeometry() {
 	// init buffers and vertex array object
 	glGenVertexArrays(1, &vectorVao);
 	glGenBuffers(1, &vectorModelVbo);
+	glGenBuffers(1, &vectorColorVbo);
 	glGenBuffers(1, &vectorTransformVbo);
 
 	// buffer vector model
@@ -316,10 +334,16 @@ void CaWorkbench::initVectorGeometry() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
+	// define color attribute (instanced)
+	glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (GLvoid*)0);
+	glVertexAttribDivisor(1, 1);
+	glEnableVertexAttribArray(1);
+
 	// define transform attribute (instanced)
 	glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
-	for (unsigned int i = 1; i <= 4; i++) {   // don't really understand binding the matrix 4 times... need to figure it out
-		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)((i - 1) * sizeof(glm::vec4)));
+	for (unsigned int i = 2; i <= 5; i++) {   // don't really understand binding the matrix 4 times... need to figure it out
+		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)((i - 2) * sizeof(glm::vec4)));
 		glVertexAttribDivisor(i, 1);
 		glEnableVertexAttribArray(i);
 	}
@@ -333,14 +357,23 @@ void CaWorkbench::doRenderLoop()
 	while (!glfwWindowShouldClose(glWindow)) {
 		glfwPollEvents();
 
-		if(!paused) {
-			updateCellStates();
-			updateRenderState();
+		// update rendering data and render state
+		updateModuleRenderData();
+		updateModuleRenderDataPt.markForAverage();
+
+		updateRenderState();
+
+		if(!paused && (autoIterate || iterateOneStepFlag)) {
+			// iterate module logical state
+			if (!module->getRenderComplete())
+				module->iterate();
+			iterateOneStepFlag = false;
 		}
 	}
 
 	// cleanup
 	glDeleteBuffers(1, &vectorModelVbo);
+	glDeleteBuffers(1, &vectorColorVbo);
 	glDeleteBuffers(1, &vectorTransformVbo);
 	glDeleteBuffers(1, &cellModelVbo);
 	glDeleteBuffers(1, &cellTransformVbo);
@@ -355,22 +388,17 @@ void CaWorkbench::doRenderLoop()
 	glfwTerminate();
 }
 
-void CaWorkbench::updateCellStates()
+void CaWorkbench::updateModuleRenderData()
 {
-	if (module->getRenderComplete())
-		return;
-
-	// iterate logical state
-	module->iterate();
-
 	// setup cell translation and color data
 	unsigned int cellTransformIndex = 0;
 	unsigned int siteIndex = 0;
-	for (unsigned int r = 0; r < rows; r++) {
-		for (unsigned int c = 0; c < cols; c++) {
-			unsigned int row = rows - r - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
 
-			// cell translation
+	for (unsigned int r = 0; r < rows; r++) {
+		unsigned int row = rows - r - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
+
+		for (unsigned int c = 0; c < cols; c++) {
+
 			GLfloat transX;
 			GLfloat transY;
 			if (module->getSiteActive(siteIndex)) {
@@ -383,9 +411,11 @@ void CaWorkbench::updateCellStates()
 				transX = -1.0f;
 				transY = -1.0f;
 			}
+
+			// translation
 			cellTransformData[cellTransformIndex++] = transX;
 			cellTransformData[cellTransformIndex++] = transY;
-
+			
 			// cell color
 			vector<float>* color = module->getSiteColor(siteIndex++);
 			cellTransformData[cellTransformIndex++] = color->at(0);
@@ -393,18 +423,28 @@ void CaWorkbench::updateCellStates()
 			cellTransformData[cellTransformIndex++] = color->at(2);
 		}
 	}
+
 	// buffer cell transform data
 	glBindBuffer(GL_ARRAY_BUFFER, cellTransformVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellTransformData.size(), cellTransformData.data(), GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * cellTransformDataSize, cellTransformData.data());
 
 	// connection vectors
 	if (vectorsOn) {
-		unsigned int connectionVectorIndex = 0;
+		// vector color
 		vector<unsigned int>* connectionVectors = theModule->getConnectionVectors();
 		unsigned int connectionIndexes = connectionVectors->size();
-		vectorTransformData.resize(connectionIndexes / 2);
+		unsigned int connectionCount = connectionIndexes / 2;
+		unsigned int connectionVectorColorsIndex = 0;
+		vector<glm::vec4> connectionVectorColors;
+		connectionVectorColors.resize(connectionCount);
+
+		// vector transform
+		unsigned int connectionVectorIndex = 0;
+		vectorTransformData.resize(connectionCount);
 
 		for (unsigned int i = 0; i < connectionIndexes; i += 2) {
+
+			connectionVectorColors[connectionVectorColorsIndex++] = glm::vec4(0.0f, 0.0f, 1.0f, 0.1f);
 
 			unsigned int tailId = connectionVectors->at(i);
 			unsigned int tailCol = tailId % cols;
@@ -430,6 +470,10 @@ void CaWorkbench::updateCellStates()
 
 			vectorTransformData[connectionVectorIndex++] = transform;
 		}
+
+		// buffer vector color data
+		glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * connectionVectorColorsIndex, connectionVectorColors.data(), GL_STATIC_DRAW);
 
 		// buffer vector transform data
 		glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
@@ -480,7 +524,24 @@ void CaWorkbench::toggleVectors() {
 }
 
 void CaWorkbench::togglePaused() {
+	if (!autoIterate){
+		cout << "auto iterate is currently off, ignoring pause toggle request" << endl;
+		return;
+	}
 	paused = !paused;
+}
+
+void CaWorkbench::toggleAutoIterate() {
+	cout << "setting auto iterate " << (autoIterate ? "off" : "on") << endl;
+	autoIterate = !autoIterate;
+}
+
+void CaWorkbench::iterateOneStep() {
+	if (autoIterate) {
+		cout << "auto iterate is on, ignoring iterate one step request" << endl;
+		return;
+	}
+	iterateOneStepFlag = true;
 }
 
 void CaWorkbench::screenShot() {
@@ -521,11 +582,18 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 			case GLFW_KEY_V:
 				theCaWorkbench->toggleVectors();
 				break;
+			case GLFW_KEY_W:
+				theCaWorkbench->toggleAutoIterate();
+				break;
+			case GLFW_KEY_ENTER:
+				theCaWorkbench->iterateOneStep();
+				break;
 		}
 	}
 }
 
 CaWorkbench::~CaWorkbench()
 {
+	updateModuleRenderDataPt.stop();
 	delete module;
 }

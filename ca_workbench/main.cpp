@@ -3,14 +3,16 @@
 #include "CaWorkbench.hpp"
 #include "OneDimCaModule.hpp"
 #include "RandomBooleanNetworkModule.hpp"
+#include "NeuralNetworkModule.hpp"
 
 int main()
 {
 	try {
 		cout << "Starting CA Workbench" << endl;
 
-		CaWorkbenchModule* module = new OneDimCaModule(800, 1600, 0);
+		//CaWorkbenchModule* module = new OneDimCaModule(800, 1600, 0);
 		//CaWorkbenchModule* module = new RandomBooleanNetworkModule(200, 400, 3, 80, 10, 10, false, true);
+		CaWorkbenchModule* module = new NeuralNetworkModule(100, 200, 3, 1, 1, 1, false, true);
 		CaWorkbench caWb = CaWorkbench(module);
 		caWb.doRenderLoop();
 

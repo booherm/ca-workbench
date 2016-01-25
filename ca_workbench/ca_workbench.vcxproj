@@ -148,12 +148,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NeuralNetworkModule.cpp" />
+    <ClCompile Include="NeuronSite.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="CaWorkbench.cpp" />
     <ClCompile Include="CaWorkbenchModule.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OglShaderProgram.cpp" />
+    <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="RandomBooleanNetworkModule.cpp" />
     <ClCompile Include="RandomBooleanNetworkSite.cpp" />
     <ClCompile Include="Site.cpp" />
@@ -163,11 +166,15 @@
     <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="CaWorkbench.hpp" />
     <ClInclude Include="CaWorkbenchModule.hpp" />
+    <ClInclude Include="NeuralNetworkModule.hpp" />
+    <ClInclude Include="NeuronSite.hpp" />
     <ClInclude Include="OglShaderProgram.hpp" />
     <ClInclude Include="OneDimCaModule.hpp" />
+    <ClInclude Include="PerformanceTimer.hpp" />
     <ClInclude Include="RandomBooleanNetworkModule.hpp" />
     <ClInclude Include="RandomBooleanNetworkSite.hpp" />
     <ClInclude Include="Site.hpp" />
+    <ClInclude Include="SiteConnection.hpp" />
     <ClInclude Include="Util.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
