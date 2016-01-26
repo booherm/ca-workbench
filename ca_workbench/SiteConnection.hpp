@@ -6,9 +6,13 @@
 class SiteConnection
 {
 public:
+	SiteConnection();
+	SiteConnection(unsigned int sourceSiteId, unsigned int destinationSiteId, const std::vector<float>& color, bool shouldRender);
+
 	unsigned int sourceSiteId;
 	unsigned int destinationSiteId;
 	std::vector<float> color;
+	bool shouldRender;
 };
 
 #endif

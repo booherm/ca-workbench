@@ -9,8 +9,9 @@ std::string siteToJson(const RandomBooleanNetworkSite& site) {
 		+ ",color:[" + std::to_string(site.color.at(0))
 		+ "," + std::to_string(site.color.at(1))
 		+ "," + std::to_string(site.color.at(2))
-		+ "],booleanFunctionId:" + std::to_string(site.booleanFunctionId)
-		+ ",inputSiteIds:[";
+		+ "],booleanFunctionId:" + std::to_string(site.booleanFunctionId);
+
+/*		+ ",inputSiteIds:[";
 
 	std::vector<unsigned int> inputSiteIds = site.inputSiteIds;
 	unsigned int inputSiteIdsSize = inputSiteIds.size();
@@ -28,7 +29,9 @@ std::string siteToJson(const RandomBooleanNetworkSite& site) {
 			result += ",";
 		result += std::to_string(outputSiteIds[i]);
 	}
-	result += "]}";
+	result += "]";
+	*/
+	result += "}";
 
 	return result;
 }

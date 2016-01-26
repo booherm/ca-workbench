@@ -23,6 +23,8 @@ CaWorkbench::CaWorkbench(CaWorkbenchModule* caWorkbenchModule)
 	initCellGeometry();
 	initVectorGeometry();
 
+	vectorTransformData.resize(theModule->getMaxSiteConnectionsCount());
+
 	updateModuleRenderDataPt.setId("RENDER_PERF_TIMER");
 }
 
@@ -326,6 +328,14 @@ void CaWorkbench::initVectorGeometry() {
 	glBindBuffer(GL_ARRAY_BUFFER, vectorModelVbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vectorModelVertices), vectorModelVertices, GL_STATIC_DRAW);
 
+	// init vector color buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * theModule->getMaxSiteConnectionsCount(), NULL, GL_STREAM_DRAW);
+
+	// init vector transform buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * theModule->getMaxSiteConnectionsCount(), NULL, GL_STREAM_DRAW);
+
 	// start vertex array object setup
 	glBindVertexArray(vectorVao);
 
@@ -342,7 +352,7 @@ void CaWorkbench::initVectorGeometry() {
 
 	// define transform attribute (instanced)
 	glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
-	for (unsigned int i = 2; i <= 5; i++) {   // don't really understand binding the matrix 4 times... need to figure it out
+	for (unsigned int i = 2; i <= 5; i++) {
 		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)((i - 2) * sizeof(glm::vec4)));
 		glVertexAttribDivisor(i, 1);
 		glEnableVertexAttribArray(i);
@@ -393,6 +403,9 @@ void CaWorkbench::updateModuleRenderData()
 	// setup cell translation and color data
 	unsigned int cellTransformIndex = 0;
 	unsigned int siteIndex = 0;
+	unsigned int connectionVectorIndex = 0;
+	vector<glm::vec4> connectionVectorColors(vectorTransformData.size());
+
 
 	for (unsigned int r = 0; r < rows; r++) {
 		unsigned int row = rows - r - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
@@ -412,15 +425,66 @@ void CaWorkbench::updateModuleRenderData()
 				transY = -1.0f;
 			}
 
-			// translation
+			// cell translation
 			cellTransformData[cellTransformIndex++] = transX;
 			cellTransformData[cellTransformIndex++] = transY;
 			
 			// cell color
-			vector<float>* color = module->getSiteColor(siteIndex++);
+			vector<float>* color = module->getSiteColor(siteIndex);
 			cellTransformData[cellTransformIndex++] = color->at(0);
 			cellTransformData[cellTransformIndex++] = color->at(1);
 			cellTransformData[cellTransformIndex++] = color->at(2);
+
+			if (vectorsOn) {
+				// vector transform
+
+				vector<SiteConnection*>* siteConnections = theModule->getSiteConnections(siteIndex);
+				unsigned int siteConnectionCount = siteConnections->size();
+				for (unsigned int s = 0; s < siteConnectionCount; s++) {
+					SiteConnection* scp = siteConnections->at(s);
+
+					if (scp->shouldRender) {
+
+						// color
+						vector<float>* siteConnectionColor = &scp->color;
+						glm::vec4 siteConnectionColorVector(
+							siteConnectionColor->at(0),
+							siteConnectionColor->at(1),
+							siteConnectionColor->at(2),
+							siteConnectionColor->at(3)
+						);
+						connectionVectorColors[connectionVectorIndex] = siteConnectionColorVector;
+
+						unsigned int tailId = scp->sourceSiteId;
+						unsigned int tailCol = tailId % cols;
+						unsigned int tailRow = rows - (tailId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
+						glm::vec2 tail((((tailCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((tailRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
+
+						unsigned int headId = scp->destinationSiteId;
+						unsigned int headCol = headId % cols;
+						unsigned int headRow = rows - (headId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
+						glm::vec2 head((((headCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((headRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
+
+						// translate to tail location
+						glm::mat4 transform;
+						transform = glm::translate(transform, glm::vec3(tail, 0.0f));
+
+						// scale to distance between tail and head
+						GLfloat distance = glm::distance(tail, head);
+						transform = glm::scale(transform, glm::vec3(distance, distance, 1.0f));
+
+						// rotate to point to head
+						GLfloat theta = angleBetweenVectors(glm::vec2(1.0f, 0.0f), glm::vec2(head.x - tail.x, head.y - tail.y));
+						transform = glm::rotate(transform, theta, glm::vec3(0.0f, 0.0f, 1.0f));
+
+						vectorTransformData[connectionVectorIndex++] = transform;
+
+
+					}
+				}
+			}
+
+			siteIndex++;
 		}
 	}
 
@@ -429,6 +493,7 @@ void CaWorkbench::updateModuleRenderData()
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * cellTransformDataSize, cellTransformData.data());
 
 	// connection vectors
+	/*
 	if (vectorsOn) {
 		// vector color
 		vector<unsigned int>* connectionVectors = theModule->getConnectionVectors();
@@ -470,14 +535,16 @@ void CaWorkbench::updateModuleRenderData()
 
 			vectorTransformData[connectionVectorIndex++] = transform;
 		}
+		*/
 
+	if(vectorsOn){
 		// buffer vector color data
 		glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * connectionVectorColorsIndex, connectionVectorColors.data(), GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec4) * connectionVectorIndex, connectionVectorColors.data());
 
 		// buffer vector transform data
 		glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * connectionVectorIndex, vectorTransformData.data(), GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * connectionVectorIndex, vectorTransformData.data());
 	}
 }
 

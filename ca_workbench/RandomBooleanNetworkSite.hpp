@@ -8,8 +8,6 @@ class RandomBooleanNetworkSite : public Site
 public:
 	bool freshActivation;
 	unsigned int booleanFunctionId;
-	std::vector<unsigned int> inputSiteIds;
-	std::vector<unsigned int> outputSiteIds;
 };
 
 std::string siteToJson(const RandomBooleanNetworkSite& site);

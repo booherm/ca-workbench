@@ -160,6 +160,7 @@
     <ClCompile Include="RandomBooleanNetworkModule.cpp" />
     <ClCompile Include="RandomBooleanNetworkSite.cpp" />
     <ClCompile Include="Site.cpp" />
+    <ClCompile Include="SiteConnection.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>

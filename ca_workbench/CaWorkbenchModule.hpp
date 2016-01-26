@@ -2,6 +2,7 @@
 #define CAWORKBENCHMODULE_HPP
 
 #include "Site.hpp"
+#include "SiteConnection.hpp"
 #include <glfw3.h>
 #include <random>
 
@@ -17,11 +18,11 @@ public:
 	// public member functions
 	virtual void iterate();
 	virtual void handleInputAction(int action, int key);
-	virtual Site* getSite(unsigned int siteId);
 	virtual bool getSiteActive(unsigned int siteId);
 	virtual std::vector<float>* getSiteColor(unsigned int siteId);
+	virtual unsigned int getMaxSiteConnectionsCount();
+	virtual std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);
 
-	std::vector<unsigned int>* getConnectionVectors();
 	unsigned int getRowCount();
 	unsigned int getColumnCount();
 	bool getRenderComplete();
@@ -36,7 +37,7 @@ protected:
 	bool renderComplete;
 	std::default_random_engine rnGen;
 	std::vector<Site> sites;
-	std::vector<unsigned int> connectionVectors;
+	std::vector<SiteConnection> siteConnections;
 };
 
 #endif

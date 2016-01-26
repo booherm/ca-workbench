@@ -17,10 +17,6 @@ void CaWorkbenchModule::iterate() {
 void CaWorkbenchModule::handleInputAction(int action, int key) {
 }
 
-inline Site* CaWorkbenchModule::getSite(unsigned int siteId) {
-	return &sites[siteId];
-}
-
 inline bool CaWorkbenchModule::getSiteActive(unsigned int siteId) {
 	return sites[siteId].currentState;
 }
@@ -29,8 +25,12 @@ inline std::vector<float>* CaWorkbenchModule::getSiteColor(unsigned int siteId) 
 	return &sites[siteId].color;
 }
 
-std::vector<unsigned int>* CaWorkbenchModule::getConnectionVectors() {
-	return &connectionVectors;
+inline unsigned int CaWorkbenchModule::getMaxSiteConnectionsCount() {
+	return 0;
+}
+
+inline std::vector<SiteConnection*>* CaWorkbenchModule::getSiteConnections(unsigned int siteId) {
+	return (std::vector<SiteConnection*>*) &sites[siteId].siteConnections;
 }
 
 bool CaWorkbenchModule::getRenderComplete() {

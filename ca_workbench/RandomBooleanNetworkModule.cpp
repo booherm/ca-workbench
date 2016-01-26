@@ -92,8 +92,15 @@ void RandomBooleanNetworkModule::resetCellStates()
 	unsigned int booleanFunctionCount = (unsigned int)pow(2, inputCombinations);
 	unsigned int siteCount = rows * cols;
 	sites.resize(siteCount);
+	siteConnections.resize(siteCount * connectivity);
+	unsigned int siteConnectionIndex = 0;
 	bernoulli_distribution initialStateRandomDist(0.50);
 	uniform_int_distribution<unsigned int> randBooleanFunctionDist(0, booleanFunctionCount - 1);
+	vector<float> initialConnectionColor(4);
+	initialConnectionColor[0] = 0.0f;
+	initialConnectionColor[1] = 1.0f;
+	initialConnectionColor[2] = 0.0f;
+	initialConnectionColor[3] = 0.25f;
 
 	for (unsigned int i = 0; i < siteCount; i++) {
 
@@ -184,17 +191,15 @@ void RandomBooleanNetworkModule::resetCellStates()
 						it++;
 					}
 					unsigned int inputSite = *it;
-					s->inputSiteIds.push_back(inputSite);
 
-					// add this site to the input site's output
-					RandomBooleanNetworkSite* connectedSite = &sites[inputSite];
-					connectedSite->outputSiteIds.push_back(s->siteId);
+					// create connection, store in the master list of connections
+					SiteConnection sc(inputSite, s->siteId, initialConnectionColor, sites[inputSite].freshActivation);
+					siteConnections[siteConnectionIndex] = sc;
 
-					// add to connection vectors if initially active (tail to head)
-					if (connectedSite->freshActivation) {
-						connectionVectors.push_back(inputSite);
-						connectionVectors.push_back(s->siteId);
-					}
+					// store a reference to this connection in this site's list of input connections
+					vector<SiteConnection>::iterator scIt = siteConnections.begin() + siteConnectionIndex;
+					s->siteConnections.push_back((SiteConnection*)&(*scIt));
+					siteConnectionIndex++;
 
 					// remove from bag
 					bag.erase(it);
@@ -255,17 +260,15 @@ void RandomBooleanNetworkModule::resetCellStates()
 						it++;
 					}
 					unsigned int inputSite = *it;
-					s->inputSiteIds.push_back(inputSite);
 
-					// add this site to the input site's output
-					RandomBooleanNetworkSite* connectedSite = &sites[inputSite];
-					connectedSite->outputSiteIds.push_back(s->siteId);
+					// create connection, store in the master list of connections
+					SiteConnection sc(inputSite, s->siteId, initialConnectionColor, sites[inputSite].freshActivation);
+					siteConnections[siteConnectionIndex] = sc;
 
-					// add to connection vectors if initially active (tail to head)
-					if (connectedSite->freshActivation) {
-						connectionVectors.push_back(inputSite);
-						connectionVectors.push_back(s->siteId);
-					}
+					// store a reference to this connection in this site's list of input connections
+					vector<SiteConnection>::iterator scIt = siteConnections.begin() + siteConnectionIndex;
+					s->siteConnections.push_back((SiteConnection*)&(*scIt));
+					siteConnectionIndex++;
 
 					// remove from bag
 					bag.erase(it);
@@ -279,32 +282,36 @@ void RandomBooleanNetworkModule::resetCellStates()
 		uniform_int_distribution<unsigned int> randInputDist(0, externalOutputStartCellIndex - 1);
 		for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 			RandomBooleanNetworkSite* s = &sites[i];
-
-			// assign k inputs randomly
 			for (unsigned int k = 0; k < connectivity; k++) {
-				// pick random site, not self, not one that was already chosen as an input site, not an external output site
 				unsigned int inputSite;
-				bool alreadyUsed;
-
-				unsigned int attempt = 0;
+				bool validSelection;
 				do {
-					//if (attempt > 0)
-					//						cout << "extraneous effort" << endl;
+					validSelection = true;
 					inputSite = randInputDist(rnGen);
-					alreadyUsed = find(s->inputSiteIds.begin(), s->inputSiteIds.end(), inputSite) != s->inputSiteIds.end();
-					attempt++;
-				} while (inputSite == s->siteId || alreadyUsed);
-				s->inputSiteIds.push_back(inputSite);
+					// site cannot be it's own input
+					if (inputSite == s->siteId) {
+						validSelection = false;
+						break;
+					}
+					else{
+						// make sure this input site has not already been chosen as an input for this site
+						for (unsigned int l = 0; l < s->siteConnections.size(); l++) {
+							if (s->siteConnections[l]->sourceSiteId == inputSite){
+								validSelection = false;
+								break;
+							}
+						}
+					}
+				} while (!validSelection);
 
-				// add this site to the input site's output
-				RandomBooleanNetworkSite* connectedSite = &sites[inputSite];
-				connectedSite->outputSiteIds.push_back(s->siteId);
+				// create connection, store in the master list of connections
+				SiteConnection sc(inputSite, s->siteId, initialConnectionColor, sites[inputSite].freshActivation);
+				siteConnections[siteConnectionIndex] = sc;
 
-				// add to connection vectors if initially active (tail to head)
-				if (connectedSite->freshActivation) {
-					connectionVectors.push_back(inputSite);
-					connectionVectors.push_back(s->siteId);
-				}
+				// store a reference to this connection in this site's list of input connections
+				vector<SiteConnection>::iterator scIt = siteConnections.begin() + siteConnectionIndex;
+				s->siteConnections.push_back((SiteConnection*)&(*scIt));
+				siteConnectionIndex++;
 			}
 		}
 	}
@@ -356,17 +363,17 @@ void RandomBooleanNetworkModule::iterate()
 		this->updateInputSites();
 
 	unsigned int siteCount = sites.size();
-	connectionVectors.clear();
-
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		RandomBooleanNetworkSite* s = &sites[i];
 
 		// build inputs up into a single byte
 		char inputValue = 0;
+		vector<SiteConnection*>* inputSiteConnections = (vector<SiteConnection*>*) &s->siteConnections;
+
 		for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
-			bool inputSiteValue = sites[s->inputSiteIds[inputSiteIndex]].currentState;
+			bool inputSiteValue = sites[inputSiteConnections->at(inputSiteIndex)->sourceSiteId].currentState;
 			if (inputSiteValue)
-				inputValue = inputValue | ((char)1 << inputSiteIndex);
+				inputValue = inputValue | ((char) 1 << inputSiteIndex);
 		}
 
 		// check input byte against function
@@ -391,12 +398,11 @@ void RandomBooleanNetworkModule::iterate()
 			s->stateChangeCount++;
 			s->freshActivation = s->workingState;
 
-			// if freshly activated, add output connection vectors
-			if (s->freshActivation) {
-				for (unsigned int j = 0; j < s->outputSiteIds.size(); j++) {
-					connectionVectors.push_back(s->siteId);
-					connectionVectors.push_back(s->outputSiteIds[j]);
-				}
+			// update site connection render state
+			vector<SiteConnection*>* inputSiteConnections = (vector<SiteConnection*>*) &s->siteConnections;
+			for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
+				SiteConnection* inputSiteConnection = inputSiteConnections->at(inputSiteIndex);
+				inputSiteConnection->shouldRender = sites[inputSiteConnections->at(inputSiteIndex)->sourceSiteId].freshActivation;
 			}
 
 			if (i >= externalOutputStartCellIndex) {  // external output cells
@@ -622,6 +628,14 @@ inline std::vector<float>* RandomBooleanNetworkModule::getSiteColor(unsigned int
 	return &sites[siteId].color;
 }
 
+inline unsigned int RandomBooleanNetworkModule::getMaxSiteConnectionsCount() {
+	return connectivity * rows * cols;
+}
+
+inline std::vector<SiteConnection*>* RandomBooleanNetworkModule::getSiteConnections(unsigned int siteId) {
+	return (std::vector<SiteConnection*>*) &sites[siteId].siteConnections;
+}
+
 inline unsigned int RandomBooleanNetworkModule::getConnectivity() {
 	return connectivity;
 }
@@ -644,7 +658,7 @@ void RandomBooleanNetworkModule::printConfigurationState() {
 void RandomBooleanNetworkModule::cleanUp()
 {
 	sites.clear();
-	connectionVectors.clear();
+	siteConnections.clear();
 	checkSums.clear();
 }
 
