@@ -25,7 +25,6 @@ public:
 
 	// public member functions
 	void iterate();
-	Site* getSite(unsigned int siteId);
 	bool getSiteActive(unsigned int siteId);
 	std::vector<float>* getSiteColor(unsigned int siteId);
 	unsigned int getMaxSiteConnectionsCount();

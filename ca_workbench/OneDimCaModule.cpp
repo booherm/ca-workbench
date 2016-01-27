@@ -8,46 +8,6 @@ OneDimCaModule::OneDimCaModule(unsigned int rows, unsigned int cols, unsigned in
 	if (activeRuleSetNumber > 3)
 		throw string("OneDimCaModule - initial rule set number must be [0-3]");
 
-
-	/*
-	// R = 2:  2^(2^0)
-	rules[0][0] = true;
-	rules[1][0] = false;
-
-	// R = 4:  2^(2^1)
-	for (unsigned int rc = 0; rc < 4; rc++) {
-		unsigned char r = (unsigned char)rc;
-
-		for (unsigned int jc = 0; jc <= 1; jc++) {
-			unsigned char j = (unsigned char)jc;
-			unsigned char shifted = r >> j;
-			rules[rc][1 - jc] = shifted & 1;
-		}
-	}
-
-	// R = 16:  2^(2^2)
-	for (unsigned int rc = 0; rc < 16; rc++) {
-	unsigned char r = (unsigned char)rc;
-
-	for (unsigned int jc = 0; jc <= 3; jc++) {
-	unsigned char j = (unsigned char)jc;
-	unsigned char shifted = r >> j;
-	rules[rc][3 - jc] = shifted & 1;
-	}
-	}
-
-	// R = 256:  2^(2^3)
-	for (unsigned int rc = 0; rc < 256; rc++) {
-	unsigned char r = (unsigned char)rc;
-
-	for (unsigned int jc = 0; jc <= 7; jc++) {
-	unsigned char j = (unsigned char)jc;
-	unsigned char shifted = r >> j;
-	rules[rc][7 - jc] = shifted & 1;
-	}
-	}
-	*/
-
 	resetCellStates();
 }
 
@@ -62,9 +22,9 @@ void OneDimCaModule::resetCellStates()
 	unsigned int neighborhoodStates = (unsigned int) pow(2, activeRuleSetNumber);
 	ruleCount = (unsigned int) pow(2, neighborhoodStates);
 	for (unsigned int rc = 0; rc < ruleCount; rc++) {
-		unsigned char r = (unsigned char)rc;
+		unsigned char r = (unsigned char) rc;
 		for (unsigned int jc = 0; jc <= neighborhoodStates - 1; jc++) {
-			unsigned char j = (unsigned char)jc;
+			unsigned char j = (unsigned char) jc;
 			unsigned char shifted = r >> j;
 			rules[rc][neighborhoodStates - 1 - jc] = shifted & 1;
 		}
@@ -102,6 +62,7 @@ void OneDimCaModule::iterate()
 
 	for (unsigned int i = 0; i < cols; i++)
 	{
+		// this could be smarter, but oh well.
 
 		if (activeRuleSetNumber == 0) {
 			// R = 2

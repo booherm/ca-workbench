@@ -158,8 +158,6 @@
     <ClCompile Include="OglShaderProgram.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="RandomBooleanNetworkModule.cpp" />
-    <ClCompile Include="RandomBooleanNetworkSite.cpp" />
-    <ClCompile Include="Site.cpp" />
     <ClCompile Include="SiteConnection.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>

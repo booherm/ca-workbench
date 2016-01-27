@@ -36,12 +36,6 @@
     <ClCompile Include="RandomBooleanNetworkModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Site.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RandomBooleanNetworkSite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OneDimCaModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

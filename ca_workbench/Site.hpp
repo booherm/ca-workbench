@@ -20,6 +20,4 @@ const size_t SIZE_SITE_ID = sizeof(Site::siteId);
 const size_t SIZE_CURRENT_STATE = sizeof(Site::currentState);
 const size_t SIZE_WORKING_STATE = sizeof(Site::workingState);
 
-std::string siteToJson(const Site& site);
-
 #endif

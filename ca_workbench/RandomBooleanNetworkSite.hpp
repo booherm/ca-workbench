@@ -10,6 +10,4 @@ public:
 	unsigned int booleanFunctionId;
 };
 
-std::string siteToJson(const RandomBooleanNetworkSite& site);
-
 #endif

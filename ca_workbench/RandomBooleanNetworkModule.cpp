@@ -100,7 +100,7 @@ void RandomBooleanNetworkModule::resetCellStates()
 	initialConnectionColor[0] = 0.0f;
 	initialConnectionColor[1] = 1.0f;
 	initialConnectionColor[2] = 0.0f;
-	initialConnectionColor[3] = 0.25f;
+	initialConnectionColor[3] = 0.75f;
 
 	for (unsigned int i = 0; i < siteCount; i++) {
 
@@ -398,13 +398,6 @@ void RandomBooleanNetworkModule::iterate()
 			s->stateChangeCount++;
 			s->freshActivation = s->workingState;
 
-			// update site connection render state
-			vector<SiteConnection*>* inputSiteConnections = (vector<SiteConnection*>*) &s->siteConnections;
-			for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
-				SiteConnection* inputSiteConnection = inputSiteConnections->at(inputSiteIndex);
-				inputSiteConnection->shouldRender = sites[inputSiteConnections->at(inputSiteIndex)->sourceSiteId].freshActivation;
-			}
-
 			if (i >= externalOutputStartCellIndex) {  // external output cells
 				s->color.at(0) = 1.0f;
 				s->color.at(1) = 0.0f;
@@ -441,6 +434,13 @@ void RandomBooleanNetworkModule::iterate()
 			}
 
 			s->freshActivation = false;
+		}
+
+		// update site connection render state
+		vector<SiteConnection*>* inputSiteConnections = (vector<SiteConnection*>*) &s->siteConnections;
+		for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
+			SiteConnection* inputSiteConnection = inputSiteConnections->at(inputSiteIndex);
+			inputSiteConnection->shouldRender = sites[inputSiteConnection->sourceSiteId].freshActivation;
 		}
 
 		s->currentState = s->workingState;
@@ -614,10 +614,6 @@ void RandomBooleanNetworkModule::toggleAutoNewInput() {
 
 void RandomBooleanNetworkModule::toggleFadeInactiveSites() {
 	fadeInactiveSites = !fadeInactiveSites;
-}
-
-inline Site* RandomBooleanNetworkModule::getSite(unsigned int siteId) {
-	return &sites[siteId];
 }
 
 inline bool RandomBooleanNetworkModule::getSiteActive(unsigned int siteId) {
