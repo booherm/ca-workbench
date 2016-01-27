@@ -21,9 +21,7 @@ CaWorkbench::CaWorkbench(CaWorkbenchModule* caWorkbenchModule)
 	initShaders();
 	initGridGeometry();
 	initCellGeometry();
-	initVectorGeometry();
-
-	vectorTransformData.resize(theModule->getMaxSiteConnectionsCount());
+	initSiteConnectionGeometry();
 
 	updateModuleRenderDataPt.setId("RENDER_PERF_TIMER");
 }
@@ -140,8 +138,8 @@ void CaWorkbench::initShaders()
 	cellShaderProg.createFragmentShaderFromSourceString(cellFragmentShaderSource);
 	cellShaderProg.build();
 
-	// vector vertex shader
-	string vectorVertexShaderSource =
+	// site connection vertex shader
+	string siteConnectionVertexShaderSource =
 		"#version 330 core\n"
 		"\n"
 		"layout (location = 0) in vec2 position;\n"
@@ -156,8 +154,8 @@ void CaWorkbench::initShaders()
 		"    fragShaderColor = inColor;\n"
 		"}\n";
 
-	// vector fragment shader
-	string vectorFragmentShaderSource =
+	// site connection fragment shader
+	string siteConnectionFragmentShaderSource =
 		"#version 330 core\n"
 		"\n"
 		"in vec4 fragShaderColor;\n"
@@ -168,10 +166,10 @@ void CaWorkbench::initShaders()
 		"    color = fragShaderColor;\n"
 		"}\n";
 
-	vectorShaderProg = OglShaderProgram();
-	vectorShaderProg.createVertexShaderFromSourceString(vectorVertexShaderSource);
-	vectorShaderProg.createFragmentShaderFromSourceString(vectorFragmentShaderSource);
-	vectorShaderProg.build();
+	siteConnectionShaderProg = OglShaderProgram();
+	siteConnectionShaderProg.createVertexShaderFromSourceString(siteConnectionVertexShaderSource);
+	siteConnectionShaderProg.createFragmentShaderFromSourceString(siteConnectionFragmentShaderSource);
+	siteConnectionShaderProg.build();
 }
 
 void CaWorkbench::initGridGeometry()
@@ -285,7 +283,7 @@ void CaWorkbench::initCellGeometry() {
 
 	// initialize cell transform buffer
 	glBindBuffer(GL_ARRAY_BUFFER, cellTransformVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellTransformData.size(), NULL, GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cellTransformDataSize, NULL, GL_STREAM_DRAW);
 
 	// start vertex array object setup
 	glBindVertexArray(cellStatesVao);
@@ -310,48 +308,52 @@ void CaWorkbench::initCellGeometry() {
 	glBindVertexArray(0);
 }
 
-void CaWorkbench::initVectorGeometry() {
+void CaWorkbench::initSiteConnectionGeometry() {
 
 	// init buffers and vertex array object
-	glGenVertexArrays(1, &vectorVao);
-	glGenBuffers(1, &vectorModelVbo);
-	glGenBuffers(1, &vectorColorVbo);
-	glGenBuffers(1, &vectorTransformVbo);
+	siteConnectionTransformSize = theModule->getMaxSiteConnectionsCount();
+	siteConnectionTransformData.resize(siteConnectionTransformSize);
+	siteConnectionColorsSize = siteConnectionTransformSize;
+	siteConnectionColors.resize(siteConnectionColorsSize);
+	glGenVertexArrays(1, &siteConnectionVao);
+	glGenBuffers(1, &siteConnectionModelVbo);
+	glGenBuffers(1, &siteConnectionColorVbo);
+	glGenBuffers(1, &siteConnectionTransformVbo);
 
-	// buffer vector model
-	GLfloat vectorModelVertices[] = {
+	// buffer site connection model
+	GLfloat siteConnectionModelVertices[] = {
 		0.0f, // tail x
 		0.0f, // tail y
 		1.0f, // head x
 		0.0f  // head y
 	};
-	glBindBuffer(GL_ARRAY_BUFFER, vectorModelVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vectorModelVertices), vectorModelVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionModelVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(siteConnectionModelVertices), siteConnectionModelVertices, GL_STATIC_DRAW);
 
-	// init vector color buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * theModule->getMaxSiteConnectionsCount(), NULL, GL_STREAM_DRAW);
+	// init site connection color buffer
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionColorVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * siteConnectionColorsSize, NULL, GL_STREAM_DRAW);
 
-	// init vector transform buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * theModule->getMaxSiteConnectionsCount(), NULL, GL_STREAM_DRAW);
+	// init site connection transform buffer
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionTransformVbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * siteConnectionTransformSize, NULL, GL_STREAM_DRAW);
 
 	// start vertex array object setup
-	glBindVertexArray(vectorVao);
+	glBindVertexArray(siteConnectionVao);
 
 	// define position attribute (model)
-	glBindBuffer(GL_ARRAY_BUFFER, vectorModelVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionModelVbo);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
 	// define color attribute (instanced)
-	glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionColorVbo);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (GLvoid*)0);
 	glVertexAttribDivisor(1, 1);
 	glEnableVertexAttribArray(1);
 
 	// define transform attribute (instanced)
-	glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, siteConnectionTransformVbo);
 	for (unsigned int i = 2; i <= 5; i++) {
 		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)((i - 2) * sizeof(glm::vec4)));
 		glVertexAttribDivisor(i, 1);
@@ -382,14 +384,14 @@ void CaWorkbench::doRenderLoop()
 	}
 
 	// cleanup
-	glDeleteBuffers(1, &vectorModelVbo);
-	glDeleteBuffers(1, &vectorColorVbo);
-	glDeleteBuffers(1, &vectorTransformVbo);
+	glDeleteBuffers(1, &siteConnectionModelVbo);
+	glDeleteBuffers(1, &siteConnectionColorVbo);
+	glDeleteBuffers(1, &siteConnectionTransformVbo);
 	glDeleteBuffers(1, &cellModelVbo);
 	glDeleteBuffers(1, &cellTransformVbo);
 	glDeleteBuffers(1, &horzGridModelVbo);
 	glDeleteBuffers(1, &vertGridModelVbo);
-	glDeleteVertexArrays(1, &vectorVao);
+	glDeleteVertexArrays(1, &siteConnectionVao);
 	glDeleteVertexArrays(1, &cellStatesVao);
 	glDeleteVertexArrays(1, &horzGridVao);
 	glDeleteVertexArrays(1, &vertGridVao);
@@ -400,43 +402,35 @@ void CaWorkbench::doRenderLoop()
 
 void CaWorkbench::updateModuleRenderData()
 {
-	// setup cell translation and color data
-	unsigned int cellTransformIndex = 0;
+	cellTransformDataSize = 0;
+	siteConnectionTransformSize = 0;
+	siteConnectionColorsSize = 0;
 	unsigned int siteIndex = 0;
-	unsigned int connectionVectorIndex = 0;
-	vector<glm::vec4> connectionVectorColors(vectorTransformData.size());
-
-
+	
+	// process sites and site connections
 	for (unsigned int r = 0; r < rows; r++) {
 		unsigned int row = rows - r - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
+		GLfloat transY = row * yInc;
 
 		for (unsigned int c = 0; c < cols; c++) {
 
-			GLfloat transX;
-			GLfloat transY;
 			if (module->getSiteActive(siteIndex)) {
 				// translate logical cell location to world space
-				transX = c * xInc;
-				transY = row * yInc;
-			}
-			else {
-				// cell is inactive, render off screen
-				transX = -1.0f;
-				transY = -1.0f;
+				GLfloat transX = c * xInc;
+
+				// cell translation
+				cellTransformData[cellTransformDataSize++] = transX;
+				cellTransformData[cellTransformDataSize++] = transY;
+
+				// cell color
+				vector<float>* color = module->getSiteColor(siteIndex);
+				cellTransformData[cellTransformDataSize++] = color->at(0);
+				cellTransformData[cellTransformDataSize++] = color->at(1);
+				cellTransformData[cellTransformDataSize++] = color->at(2);
 			}
 
-			// cell translation
-			cellTransformData[cellTransformIndex++] = transX;
-			cellTransformData[cellTransformIndex++] = transY;
-			
-			// cell color
-			vector<float>* color = module->getSiteColor(siteIndex);
-			cellTransformData[cellTransformIndex++] = color->at(0);
-			cellTransformData[cellTransformIndex++] = color->at(1);
-			cellTransformData[cellTransformIndex++] = color->at(2);
-
-			if (vectorsOn) {
-				// vector transform
+			if (siteConnectionsOn) {
+				// site connection transform
 
 				vector<SiteConnection*>* siteConnections = theModule->getSiteConnections(siteIndex);
 				unsigned int siteConnectionCount = siteConnections->size();
@@ -453,13 +447,13 @@ void CaWorkbench::updateModuleRenderData()
 							siteConnectionColor->at(2),
 							siteConnectionColor->at(3)
 						);
-						connectionVectorColors[connectionVectorIndex] = siteConnectionColorVector;
+						siteConnectionColors[siteConnectionColorsSize++] = siteConnectionColorVector;
 
+						// translate logical cell location to world space
 						unsigned int tailId = scp->sourceSiteId;
 						unsigned int tailCol = tailId % cols;
 						unsigned int tailRow = rows - (tailId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
 						glm::vec2 tail((((tailCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((tailRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
-
 						unsigned int headId = scp->destinationSiteId;
 						unsigned int headCol = headId % cols;
 						unsigned int headRow = rows - (headId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
@@ -477,9 +471,7 @@ void CaWorkbench::updateModuleRenderData()
 						GLfloat theta = angleBetweenVectors(glm::vec2(1.0f, 0.0f), glm::vec2(head.x - tail.x, head.y - tail.y));
 						transform = glm::rotate(transform, theta, glm::vec3(0.0f, 0.0f, 1.0f));
 
-						vectorTransformData[connectionVectorIndex++] = transform;
-
-
+						siteConnectionTransformData[siteConnectionTransformSize++] = transform;
 					}
 				}
 			}
@@ -492,59 +484,14 @@ void CaWorkbench::updateModuleRenderData()
 	glBindBuffer(GL_ARRAY_BUFFER, cellTransformVbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * cellTransformDataSize, cellTransformData.data());
 
-	// connection vectors
-	/*
-	if (vectorsOn) {
-		// vector color
-		vector<unsigned int>* connectionVectors = theModule->getConnectionVectors();
-		unsigned int connectionIndexes = connectionVectors->size();
-		unsigned int connectionCount = connectionIndexes / 2;
-		unsigned int connectionVectorColorsIndex = 0;
-		vector<glm::vec4> connectionVectorColors;
-		connectionVectorColors.resize(connectionCount);
+	if(siteConnectionsOn){
+		// buffer site connection color data
+		glBindBuffer(GL_ARRAY_BUFFER, siteConnectionColorVbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec4) * siteConnectionColorsSize, siteConnectionColors.data());
 
-		// vector transform
-		unsigned int connectionVectorIndex = 0;
-		vectorTransformData.resize(connectionCount);
-
-		for (unsigned int i = 0; i < connectionIndexes; i += 2) {
-
-			connectionVectorColors[connectionVectorColorsIndex++] = glm::vec4(0.0f, 0.0f, 1.0f, 0.1f);
-
-			unsigned int tailId = connectionVectors->at(i);
-			unsigned int tailCol = tailId % cols;
-			unsigned int tailRow = rows - (tailId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
-			glm::vec2 tail((((tailCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((tailRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
-
-			unsigned int headId = connectionVectors->at(i + 1);
-			unsigned int headCol = headId % cols;
-			unsigned int headRow = rows - (headId / cols) - 1; // logical location row (x) is top down, but the GL window row (x) is bottom up
-			glm::vec2 head((((headCol * xInc) + (xInc / 2.0f)) * 2.0f) - 1.0f, (((headRow * yInc) + (yInc / 2.0f)) * 2.0f) - 1.0f);
-
-			// translate to tail location
-			glm::mat4 transform;
-			transform = glm::translate(transform, glm::vec3(tail, 0.0f));
-
-			// scale to distance between tail and head
-			GLfloat distance = glm::distance(tail, head);
-			transform = glm::scale(transform, glm::vec3(distance, distance, 1.0f));
-
-			// rotate to point to head
-			GLfloat theta = angleBetweenVectors(glm::vec2(1.0f, 0.0f), glm::vec2(head.x - tail.x, head.y - tail.y));
-			transform = glm::rotate(transform, theta, glm::vec3(0.0f, 0.0f, 1.0f));
-
-			vectorTransformData[connectionVectorIndex++] = transform;
-		}
-		*/
-
-	if(vectorsOn){
-		// buffer vector color data
-		glBindBuffer(GL_ARRAY_BUFFER, vectorColorVbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec4) * connectionVectorIndex, connectionVectorColors.data());
-
-		// buffer vector transform data
-		glBindBuffer(GL_ARRAY_BUFFER, vectorTransformVbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * connectionVectorIndex, vectorTransformData.data());
+		// buffer site connection transform data
+		glBindBuffer(GL_ARRAY_BUFFER, siteConnectionTransformVbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * siteConnectionTransformSize, siteConnectionTransformData.data());
 	}
 }
 
@@ -558,8 +505,10 @@ void CaWorkbench::updateRenderState() {
 	glBindVertexArray(cellStatesVao);
 	if (pointMode)
 		glDrawArraysInstanced(GL_POINTS, 0, 1, rows * cols);
-	else
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, rows * cols);
+	else {
+		// 6 vertices per model, (2 translation + 3 color) = 5 buffer elements per instance
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, cellTransformDataSize / 5);
+	}
 
 	// draw grid
 	if(gridLinesOn){
@@ -570,11 +519,11 @@ void CaWorkbench::updateRenderState() {
 		glDrawArraysInstanced(GL_LINES, 0, 2, rows);
 	}
 
-	// draw vectors
-	if(vectorsOn){
-		vectorShaderProg.use();
-		glBindVertexArray(vectorVao);
-		glDrawArraysInstanced(GL_LINES, 0, 2, vectorTransformData.size());
+	// draw site connections
+	if(siteConnectionsOn){
+		siteConnectionShaderProg.use();
+		glBindVertexArray(siteConnectionVao);
+		glDrawArraysInstanced(GL_LINES, 0, 2, siteConnectionTransformSize);
 	}
 
 	// publish frame
@@ -586,8 +535,8 @@ void CaWorkbench::toggleGridLines() {
 	gridLinesOn = !gridLinesOn;
 }
 
-void CaWorkbench::toggleVectors() {
-	vectorsOn = !vectorsOn;
+void CaWorkbench::toggleSiteConnections() {
+	siteConnectionsOn = !siteConnectionsOn;
 }
 
 void CaWorkbench::togglePaused() {
@@ -647,7 +596,7 @@ void CaWorkbench::keyCallback(GLFWwindow* window, int key, int scancode, int act
 				theCaWorkbench->togglePaused();
 				break;
 			case GLFW_KEY_V:
-				theCaWorkbench->toggleVectors();
+				theCaWorkbench->toggleSiteConnections();
 				break;
 			case GLFW_KEY_W:
 				theCaWorkbench->toggleAutoIterate();

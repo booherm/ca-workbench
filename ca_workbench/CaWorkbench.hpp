@@ -52,14 +52,17 @@ private:
 	std::vector<GLfloat> cellTransformData;
 	bool pointMode = false;
 
-	// vectors
-	GLuint vectorVao;
-	GLuint vectorModelVbo;
-	GLuint vectorColorVbo;
-	GLuint vectorTransformVbo;
-	OglShaderProgram vectorShaderProg;
-	std::vector<glm::mat4> vectorTransformData;
-	bool vectorsOn = false;
+	// site connections
+	GLuint siteConnectionVao;
+	GLuint siteConnectionModelVbo;
+	GLuint siteConnectionColorVbo;
+	GLuint siteConnectionTransformVbo;
+	OglShaderProgram siteConnectionShaderProg;
+	unsigned int siteConnectionTransformSize;
+	std::vector<glm::mat4> siteConnectionTransformData;
+	unsigned int siteConnectionColorsSize;
+	std::vector<glm::vec4> siteConnectionColors;
+	bool siteConnectionsOn = false;
 
 	// CA workbench variables
 	unsigned int screenShotId = 0;
@@ -77,11 +80,11 @@ private:
 	void initShaders();
 	void initGridGeometry();
 	void initCellGeometry();
-	void initVectorGeometry();
+	void initSiteConnectionGeometry();
 	void updateModuleRenderData();
 	void updateRenderState();
 	void toggleGridLines();
-	void toggleVectors();
+	void toggleSiteConnections();
 	void togglePaused();
 	void toggleAutoIterate();
 	void iterateOneStep();
