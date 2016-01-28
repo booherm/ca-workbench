@@ -11,8 +11,8 @@ int main()
 		cout << "Starting CA Workbench" << endl;
 
 		//CaWorkbenchModule* module = new OneDimCaModule(800, 1600, 0);
-		CaWorkbenchModule* module = new RandomBooleanNetworkModule(100, 200, 3, 23, 4, 4, false, true);
-		//CaWorkbenchModule* module = new NeuralNetworkModule(100, 200, 3, 1, 1, 1, false, true);
+		//CaWorkbenchModule* module = new RandomBooleanNetworkModule(100, 200, 3, 23, 4, 4, false, true);
+		CaWorkbenchModule* module = new NeuralNetworkModule(200, 400, 3, 1, 1, 1, false, true);
 		CaWorkbench caWb = CaWorkbench(module);
 		caWb.doRenderLoop();
 

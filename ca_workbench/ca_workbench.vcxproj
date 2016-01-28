@@ -149,7 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="NeuralNetworkModule.cpp" />
-    <ClCompile Include="NeuronSite.cpp" />
+    <ClCompile Include="NeuralSynapse.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="CaWorkbench.cpp" />
@@ -166,6 +166,7 @@
     <ClInclude Include="CaWorkbench.hpp" />
     <ClInclude Include="CaWorkbenchModule.hpp" />
     <ClInclude Include="NeuralNetworkModule.hpp" />
+    <ClInclude Include="NeuralSynapse.hpp" />
     <ClInclude Include="NeuronSite.hpp" />
     <ClInclude Include="OglShaderProgram.hpp" />
     <ClInclude Include="OneDimCaModule.hpp" />
