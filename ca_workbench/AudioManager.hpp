@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "portaudio.h"
+#include <portaudio.h>
 
 const int SAMPLE_RATE = 8000;  // telephone quality
 //const int SAMPLE_RATE = 32000;  // fm radio quality

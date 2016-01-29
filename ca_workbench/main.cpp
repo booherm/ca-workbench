@@ -4,6 +4,7 @@
 #include "OneDimCaModule.hpp"
 #include "RandomBooleanNetworkModule.hpp"
 #include "NeuralNetworkModule.hpp"
+#include "AwesomiumUiWindow.hpp"
 
 int main()
 {
@@ -12,9 +13,14 @@ int main()
 
 		//CaWorkbenchModule* module = new OneDimCaModule(800, 1600, 0);
 		//CaWorkbenchModule* module = new RandomBooleanNetworkModule(100, 200, 3, 23, 4, 4, false, true);
-		CaWorkbenchModule* module = new NeuralNetworkModule(200, 400, 3, 20, 20, 20, false, true);
-		CaWorkbench caWb = CaWorkbench(module);
-		caWb.doRenderLoop();
+		//CaWorkbenchModule* module = new NeuralNetworkModule(200, 400, 3, 20, 20, 20, false, true);
+		//CaWorkbench caWb = CaWorkbench(module);
+		//caWb.doRenderLoop();
+
+		AwesomiumUiWindow uiWindow(800, 600, "CA Workbench");
+		uiWindow.threadStart();
+		uiWindow.threadJoin();
+
 
 		/*
 		//AudioManager am = AudioManager();

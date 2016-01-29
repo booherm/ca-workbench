@@ -51,6 +51,9 @@
     <ClCompile Include="NeuralSynapse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AwesomiumUiWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CaWorkbench.hpp">
@@ -93,6 +96,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NeuralSynapse.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AwesomiumUiWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

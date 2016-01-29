@@ -88,12 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;external\awesomium-1.7.5.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32s.lib;external\glfw-3.1.2\glfw3.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32s.lib;external\glfw-3.1.2\glfw3.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -121,14 +121,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;external\awesomium-1.7.5.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32s.lib;external\glfw-3.1.2\glfw3.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32s.lib;external\glfw-3.1.2\glfw3.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AwesomiumUiWindow.cpp" />
     <ClCompile Include="NeuralNetworkModule.cpp" />
     <ClCompile Include="NeuralSynapse.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
@@ -164,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioManager.hpp" />
+    <ClInclude Include="AwesomiumUiWindow.hpp" />
     <ClInclude Include="CaWorkbench.hpp" />
     <ClInclude Include="CaWorkbenchModule.hpp" />
     <ClInclude Include="NeuralNetworkModule.hpp" />

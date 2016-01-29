@@ -6,7 +6,7 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
-#include "boost/crc.hpp"
+#include <boost/crc.hpp>
 
 class RandomBooleanNetworkModule : public CaWorkbenchModule
 {
