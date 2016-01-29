@@ -18,9 +18,22 @@ UINT64 getSystemTimeNanos()
 	li.HighPart = ft.dwHighDateTime;
 
 	UINT64 ret = li.QuadPart;
-	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
+	ret -= 116444736000000000LL; // Convert from file time to UNIX epoch time.
 
 	return ret;
+}
+
+void initTimeVariables() {
+	LARGE_INTEGER timeTicksPerSecond;
+	QueryPerformanceFrequency(&timeTicksPerSecond);
+	QueryPerformanceCounter(&startupTime);
+	timeFrequency = 1.0 / (double) timeTicksPerSecond.QuadPart;
+}
+
+float getSystemTimeSeconds() {
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	return (float) ((counter.QuadPart * 1.0) / timeFrequency);
 }
 
 void uint64ToString(UINT64 value, std::string& result) {

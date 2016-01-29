@@ -88,13 +88,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\projects\vs_workspace\ca_workbench\ca_workbench\external\portaudio\include;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\boost_1_60_0;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\eigen;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\soil-1.16\src;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glfw-3.1.2\include\GLFW;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glm-0.9.7.1\glm;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glu32.lib;opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32s.lib;external\glfw-3.1.2\glfw3.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -120,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\projects\vs_workspace\ca_workbench\ca_workbench\external\portaudio\include;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\boost_1_60_0;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\eigen;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\soil-1.16\src;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glfw-3.1.2\include\GLFW;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glm-0.9.7.1\glm;C:\projects\vs_workspace\ca_workbench\ca_workbench\external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>external\portaudio\include;external\boost_1_60_0;external\soil-1.16\src;external\glfw-3.1.2\include\GLFW;external\glm-0.9.7.1\glm;external\glew-1.13.0\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
