@@ -1,7 +1,9 @@
 #ifndef AWESOMIUMUIWINDOW_HPP
 #define AWESOMIUMUIWINDOW_HPP
 
-#include <Awesomium/WebCore.h>
+#include "AwesomiumMessageDispatcher.hpp"
+
+//#include <Awesomium/WebCore.h>
 #include <Awesomium/STLHelpers.h>
 #include <Awesomium/BitmapSurface.h>
 #include <boost/thread.hpp>
@@ -46,14 +48,17 @@ public:
 
 private:
 	void initWindow();
-	void threadLoop(unsigned int n);
+	void threadLoop();
 	HWND getOsWindowHandle();
+	void doAThing(WebView* caller, const JSArray& args);
+	std::string executeJs(const std::string& javascript);
 
 	unsigned int width;
 	unsigned int height;
 	std::string windowTitle;
 	WebCore* awesomiumWebCore;
 	WebView* mainWebView;
+	MethodDispatcher jsMethodDispatcher;
 	HWND osWindowHandle;
 	boost::thread windowThread;
 };

@@ -88,18 +88,39 @@ void AwesomiumUiWindow::saveJpegScreenshot(std::string filename) {
 }
 
 void AwesomiumUiWindow::threadStart() {
-	windowThread = boost::thread(&AwesomiumUiWindow::threadLoop, this, 3);
+	windowThread = boost::thread(&AwesomiumUiWindow::threadLoop, this);
 }
 
 void AwesomiumUiWindow::threadJoin() {
 	windowThread.join();
 }
 
-void AwesomiumUiWindow::threadLoop(unsigned int n) {
+void AwesomiumUiWindow::doAThing(WebView* caller, const JSArray& args) {
+	std::cout << "called from JS" << std::endl;
+	std::cout << "executing js" << std::endl;
+	std::string reply = executeJs("foo();");
+	std::cout << "execution replied with: " << reply << std::endl;
+}
+
+std::string AwesomiumUiWindow::executeJs(const std::string& javascript) {
+	JSValue result = mainWebView->ExecuteJavascriptWithResult(WSLit(javascript.c_str()), WSLit(""));
+	return ToString(result.ToString());
+}
+
+void AwesomiumUiWindow::threadLoop() {
 	initWindow();
 
 	// debug - just for testing
-	WebURL url(WSLit("http://www.google.com"));
+	//WebURL url(WSLit("http://www.google.com"));
+	//WebURL url(WSLit("data:text/html,<h1>Hello World!</h1>"));
+	JSValue result = mainWebView->CreateGlobalJavascriptObject(WSLit("app"));
+	if (result.IsObject()) {
+		JSObject &appObject = result.ToObject();
+		jsMethodDispatcher.Bind(appObject, WSLit("sayHello"), JSDelegate(this, &AwesomiumUiWindow::doAThing));
+	}
+	mainWebView->set_js_method_handler(&jsMethodDispatcher);
+
+	WebURL url(WSLit("file:///c:/1/app.html"));
 	mainWebView->LoadURL(url);
 
 	// process window messages until closure
