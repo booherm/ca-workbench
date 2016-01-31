@@ -5,6 +5,7 @@
 #include "SiteConnection.hpp"
 #include <glfw3.h>
 #include <random>
+#include "json.hpp"
 
 class CaWorkbenchModule
 {
@@ -22,10 +23,13 @@ public:
 	virtual std::vector<float>* getSiteColor(unsigned int siteId);
 	virtual unsigned int getMaxSiteConnectionsCount();
 	virtual std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);
+	virtual void getConfigJson(Json::Value& configJson);
+	virtual void getStateJson(Json::Value& stateJson);
 
 	unsigned int getRowCount();
 	unsigned int getColumnCount();
 	bool getRenderComplete();
+	unsigned int getIteration();
 
 	// destructor
 	virtual ~CaWorkbenchModule();

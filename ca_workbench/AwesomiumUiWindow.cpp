@@ -3,10 +3,11 @@
 static std::vector<AwesomiumUiWindow*> activeAwesomiumWindows;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-AwesomiumUiWindow::AwesomiumUiWindow(unsigned int width, unsigned int height, std::string windowTitle) {
+AwesomiumUiWindow::AwesomiumUiWindow(unsigned int width, unsigned int height, std::string windowTitle, std::string initialUrl) {
 	this->width = width;
 	this->height = height;
 	this->windowTitle = windowTitle;
+	this->initialUrl = initialUrl;
 }
 
 void AwesomiumUiWindow::initWindow() {
@@ -95,33 +96,31 @@ void AwesomiumUiWindow::threadJoin() {
 	windowThread.join();
 }
 
-void AwesomiumUiWindow::doAThing(WebView* caller, const JSArray& args) {
-	std::cout << "called from JS" << std::endl;
-	std::cout << "executing js" << std::endl;
-	std::string reply = executeJs("foo();");
-	std::cout << "execution replied with: " << reply << std::endl;
-}
-
 std::string AwesomiumUiWindow::executeJs(const std::string& javascript) {
 	JSValue result = mainWebView->ExecuteJavascriptWithResult(WSLit(javascript.c_str()), WSLit(""));
 	return ToString(result.ToString());
 }
 
+JSObject AwesomiumUiWindow::createGlobalJsObject(const std::string& objectName) {
+	JSValue result = mainWebView->CreateGlobalJavascriptObject(WSLit(objectName.c_str()));
+	JSObject &appObject = result.ToObject();
+	return appObject;
+}
+
+void AwesomiumUiWindow::bindJsFunction(JSObject& scopeObject, const std::string& jsFunctionName, JSDelegate cppCallback) {
+	jsMethodDispatcher.Bind(scopeObject, WSLit(jsFunctionName.c_str()), cppCallback);
+}
+
+void  AwesomiumUiWindow::bindJsFunctions() {
+}
+
 void AwesomiumUiWindow::threadLoop() {
 	initWindow();
+	bindJsFunctions();
 
-	// debug - just for testing
-	//WebURL url(WSLit("http://www.google.com"));
-	//WebURL url(WSLit("data:text/html,<h1>Hello World!</h1>"));
-	JSValue result = mainWebView->CreateGlobalJavascriptObject(WSLit("app"));
-	if (result.IsObject()) {
-		JSObject &appObject = result.ToObject();
-		jsMethodDispatcher.Bind(appObject, WSLit("sayHello"), JSDelegate(this, &AwesomiumUiWindow::doAThing));
-	}
-	mainWebView->set_js_method_handler(&jsMethodDispatcher);
-
-	WebURL url(WSLit("file:///c:/1/app.html"));
+	WebURL url(WSLit(initialUrl.c_str()));
 	mainWebView->LoadURL(url);
+	mainWebView->set_js_method_handler(&jsMethodDispatcher);
 
 	// process window messages until closure
 	MSG msg = {};

@@ -2,17 +2,21 @@
 
 CaWorkbench::CaWorkbench()
 {
-
-	CaWorkbenchControlUi uiWindow;
-	uiWindow.threadStart();
-
 	//module = new OneDimCaModule(800, 1600, 0);
 	//module = new RandomBooleanNetworkModule(100, 200, 3, 23, 4, 4, false, true);
 	module = new NeuralNetworkModule(200, 400, 3, 20, 20, 20, false, true);
+	//module = new NeuralNetworkModule(10, 20, 3, 1, 1, 1, false, true);
+
+	uiWindow = new CaWorkbenchControlUi(module);
 	renderWindow = new CaWorkbenchRenderWindow(module);
+
+	uiWindow->threadStart();
+
+	//Sleep(5000);
+	//uiWindow->bindJsFunctions();
 	renderWindow->doRenderLoop();
 
-	uiWindow.threadJoin();
+	uiWindow->threadJoin();
 
 	/*
 	//AudioManager am = AudioManager();
@@ -30,5 +34,6 @@ CaWorkbench::CaWorkbench()
 CaWorkbench::~CaWorkbench()
 {
 	delete renderWindow;
+	delete uiWindow;
 	delete module;
 }

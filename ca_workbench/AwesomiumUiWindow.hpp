@@ -1,15 +1,14 @@
 #ifndef AWESOMIUMUIWINDOW_HPP
 #define AWESOMIUMUIWINDOW_HPP
 
-#include "AwesomiumMessageDispatcher.hpp"
-
-//#include <Awesomium/WebCore.h>
+#include <Awesomium/WebCore.h>
 #include <Awesomium/STLHelpers.h>
 #include <Awesomium/BitmapSurface.h>
 #include <boost/thread.hpp>
 #include <locale>
 #include <string>
 #include <vector>
+#include "AwesomiumMessageDispatcher.hpp"
 
 using namespace Awesomium;
 
@@ -17,13 +16,19 @@ class AwesomiumUiWindow : public WebViewListener::View
 {
 
 public:
-	AwesomiumUiWindow(unsigned int width, unsigned int height, std::string windowTitle);
+	AwesomiumUiWindow(unsigned int width, unsigned int height, std::string windowTitle, std::string initialUrl);
 	static AwesomiumUiWindow* getAwesomiumUiWindowFromOsWindowHandle(HWND osWindowHandle);
 	WebView* getMainWebView();
 	void saveJpegScreenshot(std::string filename);
 	void threadStart();
 	void threadJoin();
 
+protected:
+	std::string executeJs(const std::string& javascript);
+	JSObject createGlobalJsObject(const std::string& objectName);
+	void bindJsFunction(JSObject& scopeObject, const std::string& jsFunctionName, JSDelegate cppCallback);
+
+	virtual void bindJsFunctions();
 	// AwesomiumUiWindow::WebViewListener::View interface implementation functions
 	virtual void OnChangeTitle(WebView* caller, const WebString& title);
 	virtual void OnChangeAddressBar(WebView* caller, const WebURL& url);
@@ -50,11 +55,10 @@ private:
 	void initWindow();
 	void threadLoop();
 	HWND getOsWindowHandle();
-	void doAThing(WebView* caller, const JSArray& args);
-	std::string executeJs(const std::string& javascript);
 
 	unsigned int width;
 	unsigned int height;
+	std::string initialUrl;
 	std::string windowTitle;
 	WebCore* awesomiumWebCore;
 	WebView* mainWebView;

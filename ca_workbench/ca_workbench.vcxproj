@@ -155,6 +155,7 @@
     <ClCompile Include="AwesomiumUiWindow.cpp" />
     <ClCompile Include="CaWorkbenchControlUi.cpp" />
     <ClCompile Include="CaWorkbenchRenderWindow.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="NeuralNetworkModule.cpp" />
     <ClCompile Include="NeuralSynapse.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
@@ -177,6 +178,8 @@
     <ClInclude Include="CaWorkbenchControlUi.hpp" />
     <ClInclude Include="CaWorkbenchModule.hpp" />
     <ClInclude Include="CaWorkbenchRenderWindow.hpp" />
+    <ClInclude Include="json-forwards.hpp" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="NeuralNetworkModule.hpp" />
     <ClInclude Include="NeuralSynapse.hpp" />
     <ClInclude Include="NeuronSite.hpp" />

@@ -33,8 +33,24 @@ inline std::vector<SiteConnection*>* CaWorkbenchModule::getSiteConnections(unsig
 	return (std::vector<SiteConnection*>*) &sites[siteId].siteConnections;
 }
 
+void CaWorkbenchModule::getConfigJson(Json::Value& configJson) {
+	configJson.clear();
+	configJson["rows"] = rows;
+	configJson["columns"] = cols;
+}
+
+void CaWorkbenchModule::getStateJson(Json::Value& stateJson) {
+	stateJson.clear();
+	stateJson["iteration"] = iteration;
+	stateJson["renderComplete"] = renderComplete;
+}
+
 bool CaWorkbenchModule::getRenderComplete() {
 	return renderComplete;
+}
+
+unsigned int CaWorkbenchModule::getIteration() {
+	return iteration;
 }
 
 unsigned int CaWorkbenchModule::getRowCount() {

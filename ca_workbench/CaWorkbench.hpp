@@ -17,8 +17,8 @@ public:
 
 private:
 	CaWorkbenchModule* module;
+	CaWorkbenchControlUi* uiWindow;
 	CaWorkbenchRenderWindow* renderWindow;
-
 };
 
 #endif
