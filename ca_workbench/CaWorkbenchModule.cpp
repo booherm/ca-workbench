@@ -45,6 +45,13 @@ void CaWorkbenchModule::getStateJson(Json::Value& stateJson) {
 	stateJson["renderComplete"] = renderComplete;
 }
 
+bool CaWorkbenchModule::setConfigurationValue(const std::string& setting, const std::string& value) {
+	return false;
+}
+
+void CaWorkbenchModule::processConfigChangeQueue() {
+}
+
 bool CaWorkbenchModule::getRenderComplete() {
 	return renderComplete;
 }
@@ -59,6 +66,12 @@ unsigned int CaWorkbenchModule::getRowCount() {
 
 unsigned int CaWorkbenchModule::getColumnCount() {
 	return cols;
+}
+
+void CaWorkbenchModule::enqueueConfigChange(ConfigSetting setting) {
+	configUpdateMutex.lock();
+	configUpdateQueue.push(setting);
+	configUpdateMutex.unlock();
 }
 
 CaWorkbenchModule::~CaWorkbenchModule() {

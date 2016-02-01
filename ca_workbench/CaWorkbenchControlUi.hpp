@@ -3,6 +3,7 @@
 
 #include "AwesomiumUiWindow.hpp"
 #include "CaWorkbenchModule.hpp"
+#include "NeuralNetworkModule.hpp"
 #include "json.hpp"
 
 class CaWorkbenchControlUi : public AwesomiumUiWindow
@@ -14,6 +15,7 @@ public:
 private:
 	void refreshConfig(WebView* caller, const JSArray& args);
 	void refreshState(WebView* caller, const JSArray& args);
+	void setConfigValue(WebView* caller, const JSArray& args);
 	void bindJsFunctions();
 
 	CaWorkbenchModule* module;

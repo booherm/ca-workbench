@@ -10,19 +10,27 @@ void CaWorkbenchControlUi::bindJsFunctions() {
 
 	bindJsFunction(scopeObj, std::string("refreshConfig"), JSDelegate(this, &CaWorkbenchControlUi::refreshConfig));
 	bindJsFunction(scopeObj, std::string("refreshState"), JSDelegate(this, &CaWorkbenchControlUi::refreshState));
-
+	bindJsFunction(scopeObj, std::string("setConfigValue"), JSDelegate(this, &CaWorkbenchControlUi::setConfigValue));
 }
 
 void CaWorkbenchControlUi::refreshConfig(WebView* caller, const JSArray& args) {
 	Json::Value configJson(Json::objectValue);
 	module->getConfigJson(configJson);
-	//std::string reply = executeJs("CawbUi.refreshConfigCallback(" + configJson.toStyledString() + ");");
 	executeJs("CawbUi.refreshConfigCallback(" + configJson.toStyledString() + ");");
 }
 
 void CaWorkbenchControlUi::refreshState(WebView* caller, const JSArray& args) {
 	Json::Value stateJson(Json::objectValue);
 	module->getStateJson(stateJson);
-	//std::string reply = executeJs("CawbUi.refreshStateCallback(" + stateJson.toStyledString() + ");");
 	executeJs("CawbUi.refreshStateCallback(" + stateJson.toStyledString() + ");");
+}
+
+void CaWorkbenchControlUi::setConfigValue(WebView* caller, const JSArray& args) {
+	CaWorkbenchModule::ConfigSetting newSetting;
+	newSetting.key = ToString(args.At(0).ToString());
+	newSetting.value = ToString(args.At(1).ToString());
+
+	module->enqueueConfigChange(newSetting);
+
+	std::cout << "received call to set " << newSetting.key << " to value " << newSetting.value << std::endl;
 }

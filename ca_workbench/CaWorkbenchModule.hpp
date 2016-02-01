@@ -5,11 +5,18 @@
 #include "SiteConnection.hpp"
 #include <glfw3.h>
 #include <random>
+#include <queue>
+#include <boost/thread.hpp>
 #include "json.hpp"
 
 class CaWorkbenchModule
 {
 public:
+	struct ConfigSetting {
+		std::string key;
+		std::string value;
+	};
+
 	// constructors
 	CaWorkbenchModule(
 		unsigned int rows,
@@ -25,14 +32,18 @@ public:
 	virtual std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);
 	virtual void getConfigJson(Json::Value& configJson);
 	virtual void getStateJson(Json::Value& stateJson);
+	virtual bool setConfigurationValue(const std::string& setting, const std::string& value);
+	virtual void processConfigChangeQueue();
 
 	unsigned int getRowCount();
 	unsigned int getColumnCount();
 	bool getRenderComplete();
 	unsigned int getIteration();
+	void enqueueConfigChange(ConfigSetting setting);
 
 	// destructor
 	virtual ~CaWorkbenchModule();
+
 
 protected:
 	unsigned int rows;
@@ -42,6 +53,8 @@ protected:
 	std::default_random_engine rnGen;
 	std::vector<Site> sites;
 	std::vector<SiteConnection> siteConnections;
+	std::queue<ConfigSetting> configUpdateQueue;
+	boost::mutex configUpdateMutex;
 };
 
 #endif
