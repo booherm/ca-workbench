@@ -608,6 +608,30 @@ void CaWorkbenchRenderWindow::keyCallback(GLFWwindow* window, int key, int scanc
 	}
 }
 
+void CaWorkbenchRenderWindow::handleInputCommand(std::string command) {
+	if (command == "toggleGridLines") {
+		toggleGridLines();
+	}
+	else if (command == "screenShot") {
+		screenShot();
+	}
+	else if (command == "togglePaused") {
+		togglePaused();
+	}
+	else if (command == "toggleSiteConnections") {
+		toggleSiteConnections();
+	}
+	else if (command == "toggleAutoIterate") {
+		toggleAutoIterate();
+	}
+	else if (command == "iterateOneStep") {
+		iterateOneStep();
+	}
+	else if (command == "closeWindow") {
+		glfwSetWindowShouldClose(glWindow, GL_TRUE);
+	}
+}
+
 CaWorkbenchRenderWindow::~CaWorkbenchRenderWindow()
 {
 	updateModuleRenderDataPt.stop();

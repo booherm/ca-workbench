@@ -96,6 +96,9 @@ void AwesomiumUiWindow::threadJoin() {
 	windowThread.join();
 }
 
+void AwesomiumUiWindow::onWindowDestroy() {
+}
+
 std::string AwesomiumUiWindow::executeJs(const std::string& javascript) {
 	JSValue result = mainWebView->ExecuteJavascriptWithResult(WSLit(javascript.c_str()), WSLit(""));
 	return ToString(result.ToString());
@@ -176,6 +179,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		callingWindow->getMainWebView()->Resize(LOWORD(lParam), HIWORD(lParam));
 		break;
 	case WM_DESTROY:
+		callingWindow->onWindowDestroy();
 		PostQuitMessage(0);
 		break;
 	case WM_QUIT:

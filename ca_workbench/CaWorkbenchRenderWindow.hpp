@@ -23,6 +23,7 @@ class CaWorkbenchRenderWindow {
 public:
 	CaWorkbenchRenderWindow(CaWorkbenchModule* caWorkbenchModule);
 	void doRenderLoop();
+	void handleInputCommand(std::string command);
 	~CaWorkbenchRenderWindow();
 
 private:

@@ -157,6 +157,7 @@
     <ClCompile Include="CaWorkbenchRenderWindow.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="NeuralNetworkModule.cpp" />
+    <ClCompile Include="NeuralNetworkModuleConfig.cpp" />
     <ClCompile Include="NeuralSynapse.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
     <ClCompile Include="AudioManager.cpp" />

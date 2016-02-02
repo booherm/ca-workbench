@@ -27,12 +27,17 @@ CawbUi.refreshConfigCallback = function(configJson){
 	CawbUi.synapseWeightAdjustmentDeltaField.setValue(configJson.synapseWeightAdjustmentDelta);
 	CawbUi.minSynapseWeightField.setValue(configJson.minSynapseWeight);
 	CawbUi.maxSynapseWeightField.setValue(configJson.maxSynapseWeight);
+	CawbUi.activeExternalInputSitePatternIdField.setValue(configJson.activeExternalInputSitePatternId);
 	CawbUi.refreshConfigInProgress = false;
 };
 
 CawbUi.updateConfigField = function(field, newValue){
-	if(!CawbUi.refreshConfigInProgress)
+	if(!CawbUi.refreshConfigInProgress && field.isValid())
 		CaWorkbench.setConfigValue(field.getItemId(), newValue);
+};
+
+CawbUi.sendRenderWindowCommand = function (command) {
+    CaWorkbench.sendRenderWindowCommand(command);
 };
 
 CawbUi.init = function()
@@ -99,7 +104,7 @@ CawbUi.init = function()
 
 	CawbUi.externalOutputRowCountField = Ext.create("Ext.form.field.Number", {
 		fieldLabel: "External Output Row Count",
-		itemId: "externalOutputCount",
+		itemId: "externalOutputRowCount",
 		allowBlank: false,
 		repeatTriggerClick: false,
 		labelWidth: 250,
@@ -220,14 +225,14 @@ CawbUi.init = function()
 		listeners: {change: CawbUi.updateConfigField}
 	});
 
-	CawbUi.specificInputPatternField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Specific Input Pattern",
-		itemId: "specificInputPattern",
-		allowBlank: true,
+	CawbUi.activeExternalInputSitePatternIdField = Ext.create("Ext.form.field.Number", {
+		fieldLabel: "Active External Input Site Pattern ID",
+		itemId: "activeExternalInputSitePatternId",
+		allowBlank: false,
 		repeatTriggerClick: false,
 		labelWidth: 250,
 		minValue: 0,
-		maxValue: 2,
+		maxValue: 3,
 		step: 1,
 		listeners: {change: CawbUi.updateConfigField}
 	});
@@ -253,7 +258,7 @@ CawbUi.init = function()
 			CawbUi.synapseWeightAdjustmentDeltaField,
 			CawbUi.minSynapseWeightField,
 			CawbUi.maxSynapseWeightField,
-			CawbUi.specificInputPatternField,
+			CawbUi.activeExternalInputSitePatternIdField,
 			CawbUi.reloadButton,
 			CawbUi.refreshConfigButton
 		]
@@ -290,8 +295,7 @@ CawbUi.init = function()
 	});
 
 	CawbUi.stateFieldSet = Ext.create("Ext.form.FieldSet", {
-		title: "State",
-		width: 400,
+	    title: "State",
 		items: [
 			CawbUi.iterationField,
 			CawbUi.renderCompleteField,
@@ -302,31 +306,46 @@ CawbUi.init = function()
 		]
 	});
 	
-	CawbUi.statePanel = Ext.create("Sms.form.Panel", {
+	CawbUi.pauseButton = Ext.create("Ext.Button", {
+	    text: "Pause",
+	    handler: function () {
+	        CawbUi.sendRenderWindowCommand("togglePaused");
+	    }
+	});
+
+	CawbUi.controlsFieldSet = Ext.create("Ext.form.FieldSet", {
+	    title: "Controls",
+        height: 100,
+	    items: [
+			CawbUi.pauseButton
+	    ]
+	});
+
+	CawbUi.moduleRightPanelsContainer = Ext.create("Ext.panel.Panel", {
+        border: false,
+	    layout: {type: "vbox", align: "stretch"},
+	    width: 450,
+	    items: [
+            CawbUi.stateFieldSet,
+            CawbUi.controlsFieldSet
+        ]
+	});    
+
+	CawbUi.modulePanel = Ext.create("Sms.form.Panel", {
 		region: "center",
-		title: "State",
+		title: "Module",
 		layout: {type: "table", columns: 4, tdAttrs: {style: {verticalAlign: "top"}}},
 		items:  [
 			{xtype: "component", width: 20},
 			CawbUi.configurationFieldSet,
 			{xtype: "component", width: 20},
-			CawbUi.stateFieldSet
+			CawbUi.moduleRightPanelsContainer
 		]
-	});
-
-	CawbUi.analysisPanel = Ext.create("Ext.panel.Panel", {
-		region: "north",
-		height: 200,
-		title: "Analysis",
-		html: "something 3"
 	});
 
 	CawbUi.viewport = Ext.create("Ext.container.Viewport", {
 		layout: "border",
-		items:  [
-			CawbUi.statePanel,
-			CawbUi.analysisPanel
-		]
+		items:  [CawbUi.modulePanel]
 	});
 
 	setInterval(function(){CaWorkbench.refreshState();}, 50);

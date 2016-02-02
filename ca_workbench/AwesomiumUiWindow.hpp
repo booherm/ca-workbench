@@ -22,6 +22,7 @@ public:
 	void saveJpegScreenshot(std::string filename);
 	void threadStart();
 	void threadJoin();
+	virtual void onWindowDestroy();
 
 protected:
 	std::string executeJs(const std::string& javascript);

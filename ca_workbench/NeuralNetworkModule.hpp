@@ -13,31 +13,25 @@ class NeuralNetworkModule : public CaWorkbenchModule
 {
 public:
 	// constructors
-	NeuralNetworkModule(
-		unsigned int rows,
-		unsigned int cols,
-		unsigned int connectivity,
-		unsigned int externalInputRowCount,
-		unsigned int feedbackInputRowCount,
-		unsigned int externalOutputRowCount,
-		bool neighborhoodConnections,
-		bool autoFeedForward
-		);
+	NeuralNetworkModule(unsigned int rows, unsigned int cols);
 
-	// public member functions
+	// public configuration member functions
+	void getConfigJson(Json::Value& configJson);
+	void getStateJson(Json::Value& stateJson);
+
+	// public logic state member functions
 	void iterate();
 	bool getSiteActive(unsigned int siteId);
 	std::vector<float>* getSiteColor(unsigned int siteId);
 	unsigned int getMaxSiteConnectionsCount();
 	std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);
-	void getConfigJson(Json::Value& configJson);
-	void getStateJson(Json::Value& stateJson);
 
 	// destructor
 	~NeuralNetworkModule();
 
 private:
 
+	// general attributes
 	std::vector<NeuronSite> neuronSites;
 	std::vector<NeuralSynapse> neuralSynapses;
 	std::set<unsigned int> checkSums;
@@ -49,6 +43,7 @@ private:
 	bool autoFeedForward;
 	bool autoNewInput = false;
 	bool fadeInactiveSites = true;
+	unsigned int activeExternalInputSitePatternId;
 
 	// neural net specific
 	float globalFiringRate;
@@ -62,8 +57,6 @@ private:
 	float synapseWeightAdjustmentDelta;
 	double globalAverageFiringThreshold;
 	double globalAverageInputWeight;
-	bool neuronFiringThresholdOn;
-
 	unsigned int externalInputStartCellIndex;
 	unsigned int externalInputEndCellIndex;
 	unsigned int feedbackInputStartCellIndex;
@@ -73,39 +66,35 @@ private:
 	unsigned int externalOutputStartCellIndex;
 	unsigned int externalOutputEndCellIndex;
 
-	// private member functions
-	bool setConfigurationValue(const ConfigSetting& setting);
-	void initialize(
-		unsigned int rows,
-		unsigned int cols,
-		unsigned int connectivity,
-		unsigned int externalInputRowCount,
-		unsigned int feedbackInputRowCount,
-		unsigned int externalOutputRowCount,
-		bool neighborhoodConnections,
-		bool autoFeedForward
-		);
-	unsigned int getConnectivity();
-	void resetCellStates();
-	bool setConnectivity(unsigned int connectivity);
-	void setNeighborhoodConnections(bool neighborhoodConnections);
-	void updateInputSites();
-	void shiftInputData(int offset);
-	void setSpecificInputPattern(unsigned int patternId);
-	void incrementExternalInputRows();
-	void decrementExternalInputRows();
-	void incrementFeedbackInputRows();
-	void decrementFeedbackInputRows();
-	void incrementExternalOutputRows();
-	void decrementExternalOutputRows();
-	void feedForward();
-	void toggleAutoFeedForward();
-	void toggleAutoNewInput();
-	void toggleFadeInactiveSites();
-	void handleInputAction(int action, int key);
+	// private configuration and input member functions
 	void printConfigurationState();
 	void printWorkingState();
+	bool setConfigurationValue(const ConfigSetting& setting);
 	void processConfigChangeQueue();
+	void handleInputAction(int action, int key);
+	bool setExternalInputRowCount(unsigned int rowCount);
+	bool setFeedbackInputRowCount(unsigned int rowCount);
+	bool setExternalOutputRowCount(unsigned int rowCount);
+	void shiftInputData(int offset);
+	bool setActiveExternalInputSitePatternId(unsigned int patternId);
+	bool setConnectivity(unsigned int connectivity);
+	bool setNeighborhoodConnections(bool neighborhoodConnections);
+	void setAutoFeedForward(bool autoFeedForward);
+	void setAutoNewInput(bool autoNewInput);
+	void setFadeInactiveSites(bool fadeInactiveSites);
+	void setTargetFiringRate(float targetFiringRate);
+	void setInitialNeuronFiringThreshold(float initialNeuronFiringThreshold);
+	void setFiringRateSampleIterations(unsigned int firingRateSampleIterations);
+	void setFiringRateThresholdAdjustmentDelta(float firingRateThresholdAdjustmentDelta);
+	void setSynapseWeightAdjustmentDelta(float synapseWeightAdjustmentDelta);
+	void setMinSynapseWeight(float minSynapseWeight);
+	void setMaxSynapseWeight(float maxSynapseWeight);
+
+	// private logical state member functions
+	void initialize();
+	void resetCellStates();
+	void randomizeInputSites();
+	void feedForward();
 	void cleanUp();
 };
 
