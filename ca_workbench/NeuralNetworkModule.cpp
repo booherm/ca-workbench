@@ -5,18 +5,17 @@ using namespace std;
 ///////////////////////////////////////  constructors  //////////////////////////////////////////
 NeuralNetworkModule::NeuralNetworkModule(unsigned int rows, unsigned int cols) : CaWorkbenchModule(rows, cols) {
 
-	connectivity = 3;
+	connectivity = 2;
 	externalInputRowCount = 20;
-	feedbackInputRowCount = 20;
+	feedbackInputRowCount = 0;
 	externalOutputRowCount = 20;
-	neighborhoodConnections = false;
 	autoFeedForward = true;
-	activeExternalInputSitePatternId = 0;
+	activeExternalInputSitePatternId = 1;
 
 	initialize();
 }
 
-///////////////////////////////////////  public logic state memeber functions  //////////////////
+///////////////////////////////////////  public logic state member functions  //////////////////
 void NeuralNetworkModule::iterate()
 {
 	// process any requested config changes
@@ -30,37 +29,44 @@ void NeuralNetworkModule::iterate()
 	if (autoNewInput)
 		this->randomizeInputSites();
 
+	// global calculations variable initialization
 	double globalAverageFiringThresholdTotal = 0.0f;
 	double globalAverageInputWeightTotal = 0.0f;
+	unsigned int globalFiringRateCalcActivations = 0;
 
 	// synchronous read for current state of sites
 	unsigned int siteCount = neuronSites.size();
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		NeuronSite* s = &neuronSites[i];
 
-		// sum synapse weights that fed input to this neuron
-		float totalInputWeight = 0.0f;
+		// sum synapse weights potentially contributed to this neuron firing
+		float totalContributingInputWeight = 0.0f;
+		bool atLeastOneInputFired = false;
 		vector<NeuralSynapse*>* inputNeuralSynapses = (vector<NeuralSynapse*>*) &s->neuralSynapses;
 		for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
+
+			// source neuron of the input synapse
 			NeuralSynapse* inputSynapse = inputNeuralSynapses->at(inputSiteIndex);
-			if (neuronSites[inputSynapse->sourceSiteId].currentState)
-				totalInputWeight += inputSynapse->connectionStrengthWeight;
+
+			// if source neuron fired, add to sum of weights contributing to this neuron potentially have being fired
+			if (neuronSites[inputSynapse->sourceSiteId].currentState){
+				totalContributingInputWeight += inputSynapse->connectionStrengthWeight;
+				atLeastOneInputFired = true;
+			}
 		}
-
-		// keep running total for global synapse weight average
-		globalAverageInputWeightTotal += totalInputWeight;
-
-		// fire neuron if total input weight exceeds firing threshold
-		bool newState = totalInputWeight >= s->firingThreshold;
+		
+		// fire this neuron if total input weight exceeds its firing threshold
+		bool newState = atLeastOneInputFired && (totalContributingInputWeight >= s->firingThreshold);
 		if (newState) {
-			s->firingRateCalcActivations++;
-			globalFiringRateCalcActivations++;
+			s->firingRateCalcActivations++;    // increment counter indicating how many times this neuron has ever fired
+			globalFiringRateCalcActivations++; // keep running total of neurons fired for global firing rate calc
 		}
 
 		// Update synapse weights.  Synapses that contibuted to neuron firing are strengthend (weight increased),
 		// those that did not are weakened (weight decresed).
 		for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
 
+			// source neuron of the input synapse
 			NeuralSynapse* inputSynapse = inputNeuralSynapses->at(inputSiteIndex);
 
 			if (newState && neuronSites[inputSynapse->sourceSiteId].currentState) {
@@ -69,7 +75,7 @@ void NeuralNetworkModule::iterate()
 				if (inputSynapse->connectionStrengthWeight > maxSynapseWeight)
 					inputSynapse->connectionStrengthWeight = maxSynapseWeight;
 				inputSynapse->shouldRender = true;
-				inputSynapse->color.at(3) = 1.0f;  // debug what does it mean???
+				inputSynapse->color.at(3) = 1.0f;  // debug - need to somehow normalize this and have variable alpha
 			}
 			else {
 				// input synapse did not contribute to activation of this neuron, weaken
@@ -79,13 +85,12 @@ void NeuralNetworkModule::iterate()
 				inputSynapse->shouldRender = false;
 			}
 
+			// keep running total of synapse weight for global average
+			globalAverageInputWeightTotal += inputSynapse->connectionStrengthWeight;
 		}
 
 		// refresh this neuron's firing rate
-		if (iteration > 0 && iteration % firingRateSampleIterations == 0) {
-			s->firingRate = s->firingRateCalcActivations / (float)firingRateSampleIterations;
-			s->firingRateCalcActivations = 0;
-		}
+		s->firingRate = s->firingRateCalcActivations / (float)(iteration + 1);
 
 		// Adjust this neuron's firing threshold according to it's current firing rate.  If it's firing rate is
 		// above the global firing rate taget, increase the threshold it takes to fire the neuron.  Else if it's
@@ -95,26 +100,24 @@ void NeuralNetworkModule::iterate()
 		else if (s->firingRate < targetFiringRate)
 			s->firingThreshold -= firingRateThresholdAdjustmentDelta;
 
-		// keep running total for global firing rate calculation
+		// keep running total of firing rate for global firing rate calculation
 		globalAverageFiringThresholdTotal += s->firingThreshold;
 
 		// update working state
 		s->workingState = newState;
 	}
 
-	// calculate global average neuron firing threshold and synapse input weights from the collected values
+	// calculate global average synapse input weight
+	globalAverageInputWeight = globalAverageInputWeightTotal / ((externalOutputEndCellIndex - internalStartCellIndex) * connectivity);
+
+	// calculate the global average firing rate
+	globalFiringRate = globalFiringRateCalcActivations / (float)(externalOutputEndCellIndex - internalStartCellIndex);
+
+	// calculate global average neuron firing threshold
 	globalAverageFiringThreshold = globalAverageFiringThresholdTotal / (externalOutputEndCellIndex - internalStartCellIndex);
-	globalAverageInputWeight = globalAverageInputWeightTotal / (externalOutputEndCellIndex - internalStartCellIndex);
-
-
-	// refresh the current global firing rate
-	if (iteration > 0 && iteration % firingRateSampleIterations == 0) {
-		globalFiringRate = globalFiringRateCalcActivations / (float)firingRateSampleIterations;
-		globalFiringRateCalcActivations = 0;
-	}
 
 	// site updates and calculate overall state checksum
-	boost::crc_32_type crcResult;
+	//boost::crc_32_type crcResult;
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		NeuronSite* s = &neuronSites[i];
 
@@ -137,7 +140,7 @@ void NeuralNetworkModule::iterate()
 		}
 		else {
 
-			if (fadeInactiveSites) {
+			if (fadeStaleSites) {
 				// update cell color to fade out as it's non-updated age increases
 				if (i >= externalOutputStartCellIndex) {  // external output cells
 					float newColor = s->color.at(1) + 0.01f;
@@ -168,13 +171,9 @@ void NeuralNetworkModule::iterate()
 		// add relevent state values to running checksum bytes
 		//crcResult.process_bytes(&s->siteId, SIZE_SITE_ID);
 		//crcResult.process_bytes(&s->currentState, SIZE_CURRENT_STATE);
-		crcResult.process_byte(s->currentState);
-		//crcResult.process_bytes(&s->workingState, SIZE_WORKING_STATE);
-		//crcResult.process_bytes(&s->booleanFunctionId, SIZE_BOOLEAN_FUNCTION_ID);
-		//crcResult.process_bytes(s->inputSiteIds.data(), s->inputSiteIds.size() * SIZE_SITE_ID);
-		//crcResult.process_bytes(s->outputSiteIds.data(), s->outputSiteIds.size() * SIZE_SITE_ID);
+		//crcResult.process_byte(s->currentState);
 	}
-	unsigned int crcResultChecksum = crcResult.checksum();
+	//unsigned int crcResultChecksum = crcResult.checksum();
 
 	// store checksum in set, mark render complete if a cycle has been detected yet
 	iteration++;
@@ -233,16 +232,16 @@ void NeuralNetworkModule::initialize() {
 	externalOutputEndCellIndex = externalOutputStartCellIndex + (externalOutputRowCount * cols) - 1;
 
 	// neural net specific
-	targetFiringRate = 0.5f;
-	firingRateSampleIterations = 20;
-	initialNeuronFiringThreshold = 100.0f;
-	firingRateThresholdAdjustmentDelta = 1.0f;
-	synapseWeightAdjustmentDelta = 0.05f;
+	targetFiringRate = 0.25f;
+	firingRateSampleIterations = 0;
+	initialNeuronFiringThreshold = 0.0f;
+	initialSynapseWeight = 0.0f;
+	firingRateThresholdAdjustmentDelta = 0.1f;
+	synapseWeightAdjustmentDelta = 0.1f;
 	minSynapseWeight = -5000.0f;
 	maxSynapseWeight = 5000.0f;
 
 	resetCellStates();
-	printConfigurationState();
 }
 
 void NeuralNetworkModule::resetCellStates()
@@ -251,7 +250,6 @@ void NeuralNetworkModule::resetCellStates()
 	cleanUp();
 
 	// initialize sites
-	globalFiringRateCalcActivations = 0;
 	globalFiringRate = 0.0f;
 	globalAverageFiringThreshold = 0.0f;
 	globalAverageInputWeight = 0.0f;
@@ -309,172 +307,69 @@ void NeuralNetworkModule::resetCellStates()
 	}
 	setActiveExternalInputSitePatternId(activeExternalInputSitePatternId);
 
-	if (neighborhoodConnections)
-	{
-		unsigned int internalSiteStartRow = internalStartCellIndex / cols;
-		unsigned int externalOutputSiteEndRow = externalOutputEndCellIndex / cols;
+	// each input site must be connected to exactly one neuron
+	uniform_int_distribution<unsigned int> randInternalSiteDist(internalStartCellIndex, internalEndCellIndex);
+	for (unsigned int i = externalInputStartCellIndex; i <= externalInputEndCellIndex; i++) {
+		NeuronSite* externalInputSite = &neuronSites[i];
+		bool validSelection;
+		unsigned int outputSiteId;
+		NeuronSite* outputSite;
+		do {
+			validSelection = true;
+			outputSiteId = randInternalSiteDist(rnGen);
+			outputSite = &neuronSites[outputSiteId];
 
-		// neighbor connectivity
-		if (connectivity <= 4) // von Neumann neighborhood (k <= 4)
-		{
-			for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
-
-				NeuronSite* s = &neuronSites[i];
-
-				// put neighbors in bag
-				unsigned int thisSiteR = i / cols;
-				unsigned int thisSiteC = i - (thisSiteR * cols);
-				unsigned int neighborR;
-				unsigned int neighborC;
-				std::unordered_set<unsigned int> bag;
-				// above
-				neighborR = thisSiteR == internalSiteStartRow ? externalOutputSiteEndRow : thisSiteR - 1;
-				neighborC = thisSiteC;
-				bag.insert((neighborR * cols) + neighborC);
-				// right
-				neighborR = thisSiteR;
-				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// below
-				neighborR = thisSiteR == externalOutputSiteEndRow ? internalSiteStartRow : thisSiteR + 1;
-				neighborC = thisSiteC;
-				bag.insert((neighborR * cols) + neighborC);
-				// left
-				neighborR = thisSiteR;
-				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
-				bag.insert((neighborR * cols) + neighborC);
-
-				// assign k inputs randomly by drawing from the bag of neighbors
-				for (unsigned int k = 0; k < connectivity; k++) {
-					uniform_int_distribution<unsigned int> randNeighborDist(0, bag.size() - 1);
-					std::unordered_set<unsigned int>::iterator it = bag.begin();
-					unsigned int inputSiteBagIndex = randNeighborDist(rnGen);
-					for (unsigned int z = 0; z < inputSiteBagIndex; z++) {
-						it++;
-					}
-					unsigned int inputSite = *it;
-
-					// create synapse connection, store in the master list of synapse connections
-					NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
-					neuralSynapses[neuralSynapsesIndex] = sc;
-
-					// store a reference to this synapse connection in this site's list of input synapse connections
-					vector<NeuralSynapse>::iterator scIt = neuralSynapses.begin() + neuralSynapsesIndex;
-					s->neuralSynapses.push_back((NeuralSynapse*) &(*scIt));
-					neuralSynapsesIndex++;
-
-					// remove from bag
-					bag.erase(it);
-				}
+			// output site must not already have an input connection
+			if (outputSite->neuralSynapses.size() != 0) {
+				validSelection = false;
 			}
-		}
-		else  // Moore neighborhood
-		{
-			for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
+		} while (!validSelection);
 
-				NeuronSite* s = &neuronSites[i];
+		// create synapse connection, store in the master list of synapse connections
+		NeuralSynapse sc(i, outputSiteId, initialConnectionColor, initialSynapseWeight, false);
+		neuralSynapses[neuralSynapsesIndex] = sc;
 
-				// put neighbors in bag
-				unsigned int thisSiteR = i / cols;
-				unsigned int thisSiteC = i - (thisSiteR * cols);
-				unsigned int neighborR;
-				unsigned int neighborC;
-				std::unordered_set<unsigned int> bag;
-				// above
-				neighborR = thisSiteR == internalSiteStartRow ? externalOutputSiteEndRow : thisSiteR - 1;
-				neighborC = thisSiteC;
-				bag.insert((neighborR * cols) + neighborC);
-				// above right
-				neighborR = thisSiteR == internalSiteStartRow ? externalOutputSiteEndRow : thisSiteR - 1;
-				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// right
-				neighborR = thisSiteR;
-				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// below right
-				neighborR = thisSiteR == externalOutputSiteEndRow ? internalSiteStartRow : thisSiteR + 1;
-				neighborC = thisSiteC == cols - 1 ? 0 : thisSiteC + 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// below
-				neighborR = thisSiteR == externalOutputSiteEndRow ? internalSiteStartRow : thisSiteR + 1;
-				neighborC = thisSiteC;
-				bag.insert((neighborR * cols) + neighborC);
-				// below left
-				neighborR = thisSiteR == externalOutputSiteEndRow ? internalSiteStartRow : thisSiteR + 1;
-				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// left
-				neighborR = thisSiteR;
-				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
-				bag.insert((neighborR * cols) + neighborC);
-				// above left
-				neighborR = thisSiteR == internalSiteStartRow ? externalOutputSiteEndRow : thisSiteR - 1;
-				neighborC = thisSiteC == 0 ? cols - 1 : thisSiteC - 1;
-				bag.insert((neighborR * cols) + neighborC);
-
-				// assign k inputs randomly by drawing from the bag of neighbors
-				for (unsigned int k = 0; k < connectivity; k++) {
-					uniform_int_distribution<unsigned int> randNeighborDist(0, bag.size() - 1);
-					std::unordered_set<unsigned int>::iterator it = bag.begin();
-					unsigned int inputSiteBagIndex = randNeighborDist(rnGen);
-					for (unsigned int z = 0; z < inputSiteBagIndex; z++) {
-						it++;
-					}
-					unsigned int inputSite = *it;
-
-					// create synapse connection, store in the master list of synapse connections
-					NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
-					neuralSynapses[neuralSynapsesIndex] = sc;
-
-					// store a reference to this synapse connection in this site's list of input synapse connections
-					vector<NeuralSynapse>::iterator scIt = neuralSynapses.begin() + neuralSynapsesIndex;
-					s->neuralSynapses.push_back((NeuralSynapse*)&(*scIt));
-					neuralSynapsesIndex++;
-
-					// remove from bag
-					bag.erase(it);
-				}
-			}
-		}
+		// store a reference to this new connection in the outputSite's list of input synapse connections
+		vector<NeuralSynapse>::iterator scIt = neuralSynapses.begin() + neuralSynapsesIndex;
+		outputSite->neuralSynapses.push_back((NeuralSynapse*)&(*scIt));
+		neuralSynapsesIndex++;
 	}
-	else
-	{
-		// initialize site connectivity, arbitrary sites
-		uniform_int_distribution<unsigned int> randInputDist(0, externalOutputStartCellIndex - 1);
-		for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
-			NeuronSite* s = &neuronSites[i];
-			for (unsigned int k = 0; k < connectivity; k++) {
-				unsigned int inputSite;
-				bool validSelection;
-				do {
-					validSelection = true;
-					inputSite = randInputDist(rnGen);
-					// site cannot be it's own input
-					if (inputSite == s->siteId) {
-						validSelection = false;
-						break;
-					}
-					else {
-						// make sure this input site has not already been chosen as an input for this site
-						for (unsigned int l = 0; l < s->neuralSynapses.size(); l++) {
-							if (s->neuralSynapses[l]->sourceSiteId == inputSite) {
-								validSelection = false;
-								break;
-							}
+
+	// initialize remaining site connectivity, arbitrary sites
+	uniform_int_distribution<unsigned int> randInputDist(feedbackInputStartCellIndex, externalOutputStartCellIndex - 1);
+	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
+		NeuronSite* s = &neuronSites[i];
+		for (unsigned int k = 0; k < connectivity; k++) {
+			unsigned int inputSite;
+			bool validSelection;
+			do {
+				validSelection = true;
+				inputSite = randInputDist(rnGen);
+				// site cannot be it's own input
+				if (inputSite == s->siteId) {
+					validSelection = false;
+					break;
+				}
+				else {
+					// make sure this input site has not already been chosen as an input for this site
+					for (unsigned int l = 0; l < s->neuralSynapses.size(); l++) {
+						if (s->neuralSynapses[l]->sourceSiteId == inputSite) {
+							validSelection = false;
+							break;
 						}
 					}
-				} while (!validSelection);
+				}
+			} while (!validSelection);
 
-				// create synapse connection, store in the master list of synapse connections
-				NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
-				neuralSynapses[neuralSynapsesIndex] = sc;
+			// create synapse connection, store in the master list of synapse connections
+//			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, initialSynapseWeight, false);
+			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
+			neuralSynapses[neuralSynapsesIndex] = sc;
 
-				// store a reference to this synapse connection in this site's list of input synapse connections
-				vector<NeuralSynapse>::iterator scIt = neuralSynapses.begin() + neuralSynapsesIndex;
-				s->neuralSynapses.push_back((NeuralSynapse*)&(*scIt));
-				neuralSynapsesIndex++;
-			}
+			// store a reference to this synapse connection in this site's list of input synapse connections
+			vector<NeuralSynapse>::iterator scIt = neuralSynapses.begin() + neuralSynapsesIndex;
+			s->neuralSynapses.push_back((NeuralSynapse*)&(*scIt));
+			neuralSynapsesIndex++;
 		}
 	}
 }

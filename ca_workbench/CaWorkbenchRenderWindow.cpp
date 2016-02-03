@@ -586,26 +586,16 @@ void CaWorkbenchRenderWindow::keyCallback(GLFWwindow* window, int key, int scanc
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
-		case GLFW_KEY_G:
-			theCaWorkbenchRenderWindow->toggleGridLines();
-			break;
-		case GLFW_KEY_PRINT_SCREEN:
-			theCaWorkbenchRenderWindow->screenShot();
-			break;
-		case GLFW_KEY_PAUSE:
-			theCaWorkbenchRenderWindow->togglePaused();
-			break;
-		case GLFW_KEY_V:
-			theCaWorkbenchRenderWindow->toggleSiteConnections();
-			break;
-		case GLFW_KEY_W:
-			theCaWorkbenchRenderWindow->toggleAutoIterate();
-			break;
-		case GLFW_KEY_ENTER:
-			theCaWorkbenchRenderWindow->iterateOneStep();
-			break;
 		}
 	}
+}
+
+void CaWorkbenchRenderWindow::getStateJson(Json::Value& stateJson) {
+	stateJson.clear();
+	stateJson["paused"] = paused;
+	stateJson["autoIterate"] = autoIterate;
+	stateJson["gridLines"] = gridLinesOn;
+	stateJson["siteConnections"] = siteConnectionsOn;
 }
 
 void CaWorkbenchRenderWindow::handleInputCommand(std::string command) {

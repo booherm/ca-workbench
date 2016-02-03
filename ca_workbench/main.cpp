@@ -13,9 +13,8 @@ int main()
 	}
 	catch (string e) {
 		cout << e << endl;
+		system("pause");
 	}
-
-	system("pause");
 
 	return 0;
 }

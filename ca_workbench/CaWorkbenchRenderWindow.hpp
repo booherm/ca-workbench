@@ -23,6 +23,7 @@ class CaWorkbenchRenderWindow {
 public:
 	CaWorkbenchRenderWindow(CaWorkbenchModule* caWorkbenchModule);
 	void doRenderLoop();
+	void getStateJson(Json::Value& stateJson);
 	void handleInputCommand(std::string command);
 	~CaWorkbenchRenderWindow();
 

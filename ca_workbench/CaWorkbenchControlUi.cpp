@@ -1,7 +1,7 @@
 #include "CaWorkbenchControlUi.hpp"
 
 CaWorkbenchControlUi::CaWorkbenchControlUi(CaWorkbenchModule* module, CaWorkbenchRenderWindow* renderWindow)
-	: AwesomiumUiWindow(1024, 768, "CA Workbench", "file:///c:/projects/vs_workspace/ca_workbench/ca_workbench/web_ui/ca_workbench.html")
+	: AwesomiumUiWindow(1500, 550, "CA Workbench", "file:///c:/projects/vs_workspace/ca_workbench/ca_workbench/web_ui/ca_workbench.html")
 {
 	this->module = module;
 	this->renderWindow = renderWindow;
@@ -11,42 +11,44 @@ void CaWorkbenchControlUi::onWindowDestroy() {
 	renderWindow->handleInputCommand("closeWindow");
 }
 
-void CaWorkbenchControlUi::refreshConfig(WebView* caller, const JSArray& args) {
+void CaWorkbenchControlUi::refreshModuleConfig(WebView* caller, const JSArray& args) {
 	Json::Value configJson(Json::objectValue);
 	module->getConfigJson(configJson);
-	executeJs("CawbUi.refreshConfigCallback(" + configJson.toStyledString() + ");");
+	executeJs("CawbUi.refreshModuleConfigCallback(" + configJson.toStyledString() + ");");
 }
 
-void CaWorkbenchControlUi::refreshState(WebView* caller, const JSArray& args) {
+void CaWorkbenchControlUi::refreshModuleState(WebView* caller, const JSArray& args) {
 	Json::Value stateJson(Json::objectValue);
 	module->getStateJson(stateJson);
-	executeJs("CawbUi.refreshStateCallback(" + stateJson.toStyledString() + ");");
+	executeJs("CawbUi.refreshModuleStateCallback(" + stateJson.toStyledString() + ");");
 }
 
-void CaWorkbenchControlUi::setConfigValue(WebView* caller, const JSArray& args) {
+void CaWorkbenchControlUi::refreshRenderWindowState(WebView* caller, const JSArray& args) {
+	Json::Value stateJson(Json::objectValue);
+	renderWindow->getStateJson(stateJson);
+	executeJs("CawbUi.refreshRenderWindowStateCallback(" + stateJson.toStyledString() + ");");
+}
+
+void CaWorkbenchControlUi::setModuleConfigValue(WebView* caller, const JSArray& args) {
 	CaWorkbenchModule::ConfigSetting newSetting;
 	newSetting.key = ToString(args.At(0).ToString());
 	newSetting.value = ToString(args.At(1).ToString());
 
+	cout << "module config, key = " << newSetting.key << " value = " << newSetting.value << endl;
 	module->enqueueConfigChange(newSetting);
-
-	std::cout << "received call to set " << newSetting.key << " to value " << newSetting.value << std::endl;
 }
 
 void CaWorkbenchControlUi::sendRenderWindowCommand(WebView* caller, const JSArray& args) {
-
 	std::string command = ToString(args.At(0).ToString());
-	std::cout << "received call to send render window command " << command << std::endl;
-
 	renderWindow->handleInputCommand(command);
+	refreshRenderWindowState(caller, args);
 }
 
 void CaWorkbenchControlUi::bindJsFunctions() {
-
 	JSObject scopeObj = createGlobalJsObject(std::string("CaWorkbench"));
-
-	bindJsFunction(scopeObj, std::string("refreshConfig"), JSDelegate(this, &CaWorkbenchControlUi::refreshConfig));
-	bindJsFunction(scopeObj, std::string("refreshState"), JSDelegate(this, &CaWorkbenchControlUi::refreshState));
-	bindJsFunction(scopeObj, std::string("setConfigValue"), JSDelegate(this, &CaWorkbenchControlUi::setConfigValue));
+	bindJsFunction(scopeObj, std::string("refreshModuleConfig"), JSDelegate(this, &CaWorkbenchControlUi::refreshModuleConfig));
+	bindJsFunction(scopeObj, std::string("refreshModuleState"), JSDelegate(this, &CaWorkbenchControlUi::refreshModuleState));
+	bindJsFunction(scopeObj, std::string("refreshRenderWindowState"), JSDelegate(this, &CaWorkbenchControlUi::refreshRenderWindowState));
+	bindJsFunction(scopeObj, std::string("setModuleConfigValue"), JSDelegate(this, &CaWorkbenchControlUi::setModuleConfigValue));
 	bindJsFunction(scopeObj, std::string("sendRenderWindowCommand"), JSDelegate(this, &CaWorkbenchControlUi::sendRenderWindowCommand));
 }

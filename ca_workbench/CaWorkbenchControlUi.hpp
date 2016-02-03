@@ -15,9 +15,10 @@ public:
 	void onWindowDestroy();
 
 private:
-	void refreshConfig(WebView* caller, const JSArray& args);
-	void refreshState(WebView* caller, const JSArray& args);
-	void setConfigValue(WebView* caller, const JSArray& args);
+	void refreshModuleConfig(WebView* caller, const JSArray& args);
+	void refreshModuleState(WebView* caller, const JSArray& args);
+	void refreshRenderWindowState(WebView* caller, const JSArray& args);
+	void setModuleConfigValue(WebView* caller, const JSArray& args);
 	void sendRenderWindowCommand(WebView* caller, const JSArray& args);
 	void bindJsFunctions();
 

@@ -39,18 +39,17 @@ private:
 	unsigned int externalInputRowCount;
 	unsigned int feedbackInputRowCount;
 	unsigned int externalOutputRowCount;
-	bool neighborhoodConnections;
 	bool autoFeedForward;
 	bool autoNewInput = false;
-	bool fadeInactiveSites = true;
+	bool fadeStaleSites = true;
 	unsigned int activeExternalInputSitePatternId;
 
 	// neural net specific
 	float globalFiringRate;
 	float targetFiringRate;
 	float initialNeuronFiringThreshold;
+	float initialSynapseWeight;
 	unsigned int firingRateSampleIterations;
-	unsigned int globalFiringRateCalcActivations;
 	float firingRateThresholdAdjustmentDelta;
 	float minSynapseWeight;
 	float maxSynapseWeight;
@@ -67,8 +66,6 @@ private:
 	unsigned int externalOutputEndCellIndex;
 
 	// private configuration and input member functions
-	void printConfigurationState();
-	void printWorkingState();
 	bool setConfigurationValue(const ConfigSetting& setting);
 	void processConfigChangeQueue();
 	void handleInputAction(int action, int key);
@@ -78,12 +75,12 @@ private:
 	void shiftInputData(int offset);
 	bool setActiveExternalInputSitePatternId(unsigned int patternId);
 	bool setConnectivity(unsigned int connectivity);
-	bool setNeighborhoodConnections(bool neighborhoodConnections);
 	void setAutoFeedForward(bool autoFeedForward);
 	void setAutoNewInput(bool autoNewInput);
-	void setFadeInactiveSites(bool fadeInactiveSites);
+	void setFadeStaleSites(bool fadeStaleSites);
 	void setTargetFiringRate(float targetFiringRate);
 	void setInitialNeuronFiringThreshold(float initialNeuronFiringThreshold);
+	bool setInitialSynapseWeight(float initialSynapseWeight);
 	void setFiringRateSampleIterations(unsigned int firingRateSampleIterations);
 	void setFiringRateThresholdAdjustmentDelta(float firingRateThresholdAdjustmentDelta);
 	void setSynapseWeightAdjustmentDelta(float synapseWeightAdjustmentDelta);

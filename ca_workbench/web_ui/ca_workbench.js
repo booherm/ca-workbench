@@ -1,47 +1,71 @@
 Ext.ns("CawbUi");
 
-CawbUi.refreshStateCallback = function(stateJson){
+CawbUi.refreshModuleStateCallback = function(stateJson){
 	CawbUi.iterationField.setValue(stateJson.iteration);
 	CawbUi.renderCompleteField.setValue(stateJson.renderComplete);
 	CawbUi.globalFiringRateField.setValue(stateJson.globalFiringRate);
-	CawbUi.globalFiringRateCalcField.setValue(stateJson.globalFiringRateCalcActivations);
 	CawbUi.globalAverageFiringThreshold.setValue(stateJson.globalAverageFiringThreshold);
 	CawbUi.globalAverageInputWeight.setValue(stateJson.globalAverageInputWeight);
+
+    // update chart
+	var y = (stateJson.globalFiringRate * 1000) / 1000;
+	CawbUi.chart1.series[0].addPoint([stateJson.iterationx, y], true, true);
 };
 
-CawbUi.refreshConfigCallback = function(configJson){
-	CawbUi.refreshConfigInProgress = true;
+CawbUi.refreshModuleConfigCallback = function(configJson){
+    CawbUi.refreshModuleConfigInProgress = true;
 	CawbUi.rowsField.setValue(configJson.rows);
 	CawbUi.columnsField.setValue(configJson.columns);
 	CawbUi.connectivityField.setValue(configJson.connectivity);
 	CawbUi.externalInputRowCountField.setValue(configJson.externalInputRowCount);
 	CawbUi.feedbackInputRowCountField.setValue(configJson.feedbackInputRowCount);
 	CawbUi.externalOutputRowCountField.setValue(configJson.externalOutputRowCount);
-	CawbUi.neighborhoodConnectionsField.setValue(configJson.neighborhoodConnections);
 	CawbUi.autoFeedForwardField.setValue(configJson.autoFeedForward);
 	CawbUi.autoNewInputField.setValue(configJson.autoNewInput);
+	CawbUi.fadeStaleSitesField.setValue(configJson.fadeStaleSites);
 	CawbUi.targetFiringRateField.setValue(configJson.targetFiringRate);
 	CawbUi.initialNeuronFiringThresholdField.setValue(configJson.initialNeuronFiringThreshold);
+	CawbUi.initialSynapseWeightField.setValue(configJson.initialSynapseWeight);
 	CawbUi.firingRateSampleIterationsField.setValue(configJson.firingRateSampleIterations);
 	CawbUi.firingRateThresholdAdjustmentDeltaField.setValue(configJson.firingRateThresholdAdjustmentDelta);
 	CawbUi.synapseWeightAdjustmentDeltaField.setValue(configJson.synapseWeightAdjustmentDelta);
 	CawbUi.minSynapseWeightField.setValue(configJson.minSynapseWeight);
 	CawbUi.maxSynapseWeightField.setValue(configJson.maxSynapseWeight);
 	CawbUi.activeExternalInputSitePatternIdField.setValue(configJson.activeExternalInputSitePatternId);
-	CawbUi.refreshConfigInProgress = false;
+	CawbUi.refreshModuleConfigInProgress = false;
 };
 
-CawbUi.updateConfigField = function(field, newValue){
-	if(!CawbUi.refreshConfigInProgress && field.isValid())
-		CaWorkbench.setConfigValue(field.getItemId(), newValue);
+CawbUi.refreshRenderWindowStateCallback = function (stateJson) {
+
+    CawbUi.refresRenderWindowStateInProgress = true;
+    if (stateJson.autoIterate){
+        CawbUi.pauseButton.setText(stateJson.paused ? "Unpause" : "Pause");
+        CawbUi.pauseButton.setDisabled(false);
+    }
+    else {
+        CawbUi.pauseButton.setText("Pause");
+        CawbUi.pauseButton.setDisabled(true);
+    }
+    CawbUi.stepButton.setDisabled(stateJson.autoIterate);
+    CawbUi.autoIterateField.setValue(stateJson.autoIterate);
+    CawbUi.gridLinesField.setValue(stateJson.gridLines);
+    CawbUi.siteConnectionsField.setValue(stateJson.siteConnections);
+    CawbUi.refresRenderWindowStateInProgress = false;
+};
+
+CawbUi.updateModuleConfigField = function(field, newValue){
+    if (!CawbUi.refreshModuleConfigInProgress && field.isValid())
+		CaWorkbench.setModuleConfigValue(field.getItemId(), newValue);
 };
 
 CawbUi.sendRenderWindowCommand = function (command) {
-    CaWorkbench.sendRenderWindowCommand(command);
+    if(!CawbUi.refresRenderWindowStateInProgress)
+        CaWorkbench.sendRenderWindowCommand(command);
 };
 
 CawbUi.init = function()
 {
+    ////////////////////////////////////////// debugging buttons /////////////////////////////////////////////
 	CawbUi.reloadButton = Ext.create("Ext.Button", {
 		text: "Reload Page",
 		handler: function() {
@@ -49,13 +73,14 @@ CawbUi.init = function()
 		}
 	});
 
-	CawbUi.refreshConfigButton = Ext.create("Ext.Button", {
-		text: "Reload Config",
-		handler: function() {
-			CaWorkbench.refreshConfig();
-		}
+	CawbUi.updateChartButton = Ext.create("Ext.Button", {
+	    text: "Update Chart",
+	    handler: function () {
+	        CawbUi.updateChart();
+	    }
 	});
 
+    /////////////////////////////////// module configuration /////////////////////////////////////////////
 	CawbUi.rowsField = Ext.create("Ext.form.field.Display", {
 		fieldLabel: "Rows",
 		labelWidth: 250
@@ -75,7 +100,7 @@ CawbUi.init = function()
         minValue: 0,
         maxValue: 99,
 		allowDecimals: false,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: {change: CawbUi.updateModuleConfigField}
 	});
 
 	CawbUi.externalInputRowCountField = Ext.create("Ext.form.field.Number", {
@@ -87,7 +112,7 @@ CawbUi.init = function()
         minValue: 1,
         maxValue: 1000,
 		allowDecimals: false,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 	
 	CawbUi.feedbackInputRowCountField = Ext.create("Ext.form.field.Number", {
@@ -99,7 +124,7 @@ CawbUi.init = function()
         minValue: 0,
         maxValue: 1000,
 		allowDecimals: false,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.externalOutputRowCountField = Ext.create("Ext.form.field.Number", {
@@ -111,28 +136,28 @@ CawbUi.init = function()
         minValue: 0,
         maxValue: 1000,
 		allowDecimals: false,
-		listeners: {change: CawbUi.updateConfigField}
-	});
-
-	CawbUi.neighborhoodConnectionsField = Ext.create("Ext.form.field.Checkbox", {
-		fieldLabel: "Neighborhood Connections",
-		itemId: "neighborhoodConnections",
-		labelWidth: 250,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.autoFeedForwardField = Ext.create("Ext.form.field.Checkbox", {
 		fieldLabel: "Auto Feed Forward",
 		itemId: "autoFeedForward",
 		labelWidth: 250,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.autoNewInputField = Ext.create("Ext.form.field.Checkbox", {
 		fieldLabel: "Auto New Input",
 		itemId: "autoNewInput",
 		labelWidth: 250,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.fadeStaleSitesField = Ext.create("Ext.form.field.Checkbox", {
+	    fieldLabel: "Fade Stale Sites",
+	    itemId: "fadeStaleSites",
+	    labelWidth: 250,
+	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.targetFiringRateField = Ext.create("Ext.form.field.Number", {
@@ -145,7 +170,7 @@ CawbUi.init = function()
 		maxValue: 1,
 		step: 0.1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.initialNeuronFiringThresholdField = Ext.create("Ext.form.field.Number", {
@@ -158,7 +183,20 @@ CawbUi.init = function()
 		maxValue: 1000,
 		step: 1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.initialSynapseWeightField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Initial Synapse Weight",
+	    itemId: "initialSynapseWeight",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: -5000,
+	    maxValue: 5000,
+	    step: 0.1,
+	    decimalPrecision: 3,
+	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.firingRateSampleIterationsField = Ext.create("Ext.form.field.Number", {
@@ -170,7 +208,7 @@ CawbUi.init = function()
         minValue: 0,
         maxValue: 1000,
 		allowDecimals: false,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.firingRateThresholdAdjustmentDeltaField = Ext.create("Ext.form.field.Number", {
@@ -183,7 +221,7 @@ CawbUi.init = function()
 		maxValue: 1000,
 		step: 1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 	
 	CawbUi.synapseWeightAdjustmentDeltaField = Ext.create("Ext.form.field.Number", {
@@ -196,12 +234,12 @@ CawbUi.init = function()
 		maxValue: 1000,
 		step: 1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.minSynapseWeightField = Ext.create("Ext.form.field.Number", {
 		fieldLabel: "Minimum Synapse Weight",
-		itemId: "minimumSynapseWeight",
+		itemId: "minSynapseWeight",
 		allowBlank: false,
 		repeatTriggerClick: false,
 		labelWidth: 250,
@@ -209,12 +247,12 @@ CawbUi.init = function()
 		maxValue: 10000,
 		step: 1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.maxSynapseWeightField = Ext.create("Ext.form.field.Number", {
 		fieldLabel: "Maximum Synapse Weight",
-		itemId: "maxmumSynapseWeight",
+		itemId: "maxSynapseWeight",
 		allowBlank: false,
 		repeatTriggerClick: false,
 		labelWidth: 250,
@@ -222,7 +260,7 @@ CawbUi.init = function()
 		maxValue: 10000,
 		step: 1,
 		decimalPrecision: 3,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.activeExternalInputSitePatternIdField = Ext.create("Ext.form.field.Number", {
@@ -234,7 +272,7 @@ CawbUi.init = function()
 		minValue: 0,
 		maxValue: 3,
 		step: 1,
-		listeners: {change: CawbUi.updateConfigField}
+		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.configurationFieldSet = Ext.create("Ext.form.FieldSet", {
@@ -248,11 +286,12 @@ CawbUi.init = function()
 			CawbUi.externalInputRowCountField,
 			CawbUi.feedbackInputRowCountField,
 			CawbUi.externalOutputRowCountField,
-			CawbUi.neighborhoodConnectionsField,
 			CawbUi.autoFeedForwardField,
 			CawbUi.autoNewInputField,
+            CawbUi.fadeStaleSitesField,
 			CawbUi.targetFiringRateField,
 			CawbUi.initialNeuronFiringThresholdField,
+            CawbUi.initialSynapseWeightField,
 			CawbUi.firingRateSampleIterationsField,
 			CawbUi.firingRateThresholdAdjustmentDeltaField,
 			CawbUi.synapseWeightAdjustmentDeltaField,
@@ -260,10 +299,11 @@ CawbUi.init = function()
 			CawbUi.maxSynapseWeightField,
 			CawbUi.activeExternalInputSitePatternIdField,
 			CawbUi.reloadButton,
-			CawbUi.refreshConfigButton
+            CawbUi.updateChartButton
 		]
 	});
 
+    ////////////////////////////////////// module state /////////////////////////////////////////////
 	CawbUi.iterationField = Ext.create("Ext.form.field.Display", {
 		fieldLabel: "Iteration",
 		labelWidth: 200
@@ -279,11 +319,6 @@ CawbUi.init = function()
 		labelWidth: 200
 	});
 	
-	CawbUi.globalFiringRateCalcField = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Global Firing Rate Calc Activations",
-		labelWidth: 200
-	});
-
 	CawbUi.globalAverageFiringThreshold = Ext.create("Ext.form.field.Display", {
 		fieldLabel: "Global Average Firing Threshold",
 		labelWidth: 200
@@ -300,34 +335,118 @@ CawbUi.init = function()
 			CawbUi.iterationField,
 			CawbUi.renderCompleteField,
 			CawbUi.globalFiringRateField,
-			CawbUi.globalFiringRateCalcField,
 			CawbUi.globalAverageFiringThreshold,
 			CawbUi.globalAverageInputWeight
 		]
 	});
 	
+    ///////////////////////////////////// render window controls /////////////////////////////////////////////
 	CawbUi.pauseButton = Ext.create("Ext.Button", {
 	    text: "Pause",
+	    width: 90,
+	    margin: "0 10 15 10",
 	    handler: function () {
 	        CawbUi.sendRenderWindowCommand("togglePaused");
 	    }
 	});
 
-	CawbUi.controlsFieldSet = Ext.create("Ext.form.FieldSet", {
-	    title: "Controls",
-        height: 100,
-	    items: [
-			CawbUi.pauseButton
+	CawbUi.stepButton = Ext.create("Ext.Button", {
+	    text: "Step",
+	    width: 90,
+	    margin: "0 10 15 0",
+	    handler: function () {
+	        CawbUi.sendRenderWindowCommand("iterateOneStep");
+	    }
+	});
+
+	CawbUi.screenShotButton = Ext.create("Ext.Button", {
+	    text: "Screen Shot",
+	    width: 90,
+	    margin: "0 10 15 0",
+	    handler: function () {
+	        CawbUi.sendRenderWindowCommand("screenShot");
+	    }
+	});
+
+	CawbUi.autoIterateField = Ext.create("Ext.form.field.Checkbox", {
+	    fieldLabel: "Auto Iterate",
+	    labelWidth: 120,
+	    itemId: "autoIterate",
+	    listeners: { change: function () { CawbUi.sendRenderWindowCommand("toggleAutoIterate"); } }
+	});
+
+	CawbUi.gridLinesField = Ext.create("Ext.form.field.Checkbox", {
+	    fieldLabel: "Grid Lines",
+	    labelWidth: 120,
+	    itemId: "gridLines",
+	    listeners: { change: function () { CawbUi.sendRenderWindowCommand("toggleGridLines"); } }
+	});
+
+    CawbUi.siteConnectionsField = Ext.create("Ext.form.field.Checkbox", {
+        fieldLabel: "Site Connections",
+        labelWidth: 120,
+        itemId: "siteConnections",
+        listeners: { change: function () { CawbUi.sendRenderWindowCommand("toggleSiteConnections"); } }
+    });
+
+    CawbUi.renderWindowControlButtonsContainer = Ext.create("Ext.panel.Panel", {
+        border: false,
+        layout: { type: "hbox" },
+        items: [
+			CawbUi.pauseButton,
+            CawbUi.stepButton,
+            CawbUi.screenShotButton
+        ]
+    });
+
+    CawbUi.renderWindowControlsFieldSet = Ext.create("Ext.form.FieldSet", {
+	    title: "Render Window Controls",
+	    height: 150,
+        layout: {type: "vbox"},
+        items: [
+            CawbUi.renderWindowControlButtonsContainer,
+            CawbUi.autoIterateField,
+            CawbUi.gridLinesField,
+            CawbUi.siteConnectionsField
 	    ]
 	});
 
+    ///////////////////////////////////// module controls /////////////////////////////////////////////
+    CawbUi.resetButton = Ext.create("Ext.Button", {
+        text: "Reset",
+        width: 90,
+        margin: "0 10 15 10",
+        handler: function () {
+            CaWorkbench.setModuleConfigValue("reset", null);
+        }
+    });
+
+    CawbUi.moduleControlButtonsContainer = Ext.create("Ext.panel.Panel", {
+        border: false,
+        layout: { type: "hbox" },
+        items: [
+			CawbUi.resetButton
+        ]
+    });
+
+    CawbUi.moduleControlsFieldSet = Ext.create("Ext.form.FieldSet", {
+        title: "Module Controls",
+        height: 100,
+        layout: { type: "vbox" },
+        items: [
+            CawbUi.moduleControlButtonsContainer
+        ]
+    });
+
+    ////////////////////////////////////////// layout /////////////////////////////////////////////
 	CawbUi.moduleRightPanelsContainer = Ext.create("Ext.panel.Panel", {
         border: false,
 	    layout: {type: "vbox", align: "stretch"},
 	    width: 450,
 	    items: [
             CawbUi.stateFieldSet,
-            CawbUi.controlsFieldSet
+            CawbUi.renderWindowControlsFieldSet,
+            CawbUi.moduleControlsFieldSet
         ]
 	});    
 
@@ -343,14 +462,62 @@ CawbUi.init = function()
 		]
 	});
 
-	CawbUi.viewport = Ext.create("Ext.container.Viewport", {
-		layout: "border",
-		items:  [CawbUi.modulePanel]
+	CawbUi.chartsPanel = Ext.create("Sms.form.Panel", {
+	    region: "south",
+	    title: "Analysis",
+        height: 400,
+	    html: "<div id='chart_container'></div>"
 	});
 
-	setInterval(function(){CaWorkbench.refreshState();}, 50);
-	CawbUi.refreshConfigInProgress = false;
-	CaWorkbench.refreshConfig();
+	CawbUi.viewport = Ext.create("Ext.container.Viewport", {
+		layout: "border",
+		items: [
+           CawbUi.modulePanel,
+           CawbUi.chartsPanel
+		]
+	});
+
+	CawbUi.initChart();
+	CawbUi.refreshModuleConfigInProgress = false;
+	CawbUi.refresRenderWindowStateInProgress = false;
+	setInterval(function () { CaWorkbench.refreshModuleState(); }, 50);
+	CaWorkbench.refreshModuleConfig();
+	CaWorkbench.refreshRenderWindowState();
+};
+
+CawbUi.initChart = function () {
+
+    var pointsToDisplay = 100;
+    var initialData = [];
+    for(var i = 0; i < pointsToDisplay; i++)
+        initialData.push(0.0);
+
+    CawbUi.chart1 = new Highcharts.Chart({
+        credits: {enabled: false},
+        chart: {
+            animation: false,
+            renderTo: "chart_container"
+        },
+        title: {
+            text: "Global Firing Rate"
+        },
+        xAxis: {
+            title: { text: "Iteration" },
+            type: "category"
+        },
+        yAxis: {
+            title: {text: "Global Firing Rate"},
+            min: 0,
+            max: 1
+        },
+        series: [{
+            type: "line",
+            name: "Global Firing Rate",
+            data: initialData
+        }],
+        tooltip: {enabled: false}
+    });
+
 };
 
 Ext.onReady(function(){

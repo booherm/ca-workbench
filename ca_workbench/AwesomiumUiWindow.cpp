@@ -64,7 +64,7 @@ void AwesomiumUiWindow::initWindow() {
 	activeAwesomiumWindows.push_back(this);
 
 	// show the window
-	ShowWindow(osWindowHandle, SW_SHOWNORMAL);
+	ShowWindow(osWindowHandle, SW_SHOWMAXIMIZED);
 	UpdateWindow(osWindowHandle);
 	SetTimer(osWindowHandle, 0, 15, NULL);
 }
@@ -119,12 +119,12 @@ void  AwesomiumUiWindow::bindJsFunctions() {
 
 void AwesomiumUiWindow::threadLoop() {
 	initWindow();
-	bindJsFunctions();
 
 	WebURL url(WSLit(initialUrl.c_str()));
 	mainWebView->LoadURL(url);
+	bindJsFunctions();
 	mainWebView->set_js_method_handler(&jsMethodDispatcher);
-
+	
 	// process window messages until closure
 	MSG msg = {};
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -158,7 +158,9 @@ void AwesomiumUiWindow::OnAddConsoleMessage(
 	const WebString& message,
 	int line_number,
 	const WebString& source
-	) { }
+	) {
+	std::cout << "Awesomium log message:" << std::endl << source << std::endl << "Line " << line_number << std::endl  << message << std::endl;
+}
 
 HWND AwesomiumUiWindow::getOsWindowHandle() {
 	return osWindowHandle;
