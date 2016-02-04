@@ -40,10 +40,10 @@ void AwesomiumUiWindow::initWindow() {
 		windowClassName,
 		osWindowTitle,
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		width + 20,
-		height + 40,
+		-1920,  // left monitor
+		0,
+		width,
+		height,
 		NULL,
 		NULL,
 		moduleHandle,
@@ -51,7 +51,7 @@ void AwesomiumUiWindow::initWindow() {
 		);
 	if (!osWindowHandle)
 		throw std::string("Failed to create OS window");
-
+	
 	// init awesomium
 	awesomiumWebCore = WebCore::Initialize(WebConfig());
 	mainWebView = awesomiumWebCore->CreateWebView(width, height, 0, Awesomium::kWebViewType_Window);
@@ -122,6 +122,7 @@ void AwesomiumUiWindow::threadLoop() {
 
 	WebURL url(WSLit(initialUrl.c_str()));
 	mainWebView->LoadURL(url);
+	awesomiumWebCore->Update();
 	bindJsFunctions();
 	mainWebView->set_js_method_handler(&jsMethodDispatcher);
 	

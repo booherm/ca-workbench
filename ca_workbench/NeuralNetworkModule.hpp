@@ -40,8 +40,8 @@ private:
 	unsigned int feedbackInputRowCount;
 	unsigned int externalOutputRowCount;
 	bool autoFeedForward;
-	bool autoNewInput = false;
-	bool fadeStaleSites = true;
+	bool autoNewInput;
+	bool fadeStaleSites;
 	unsigned int activeExternalInputSitePatternId;
 
 	// neural net specific
@@ -54,6 +54,7 @@ private:
 	float minSynapseWeight;
 	float maxSynapseWeight;
 	float synapseWeightAdjustmentDelta;
+	float synapseWeightAdjustmentDecrementDelta;
 	double globalAverageFiringThreshold;
 	double globalAverageInputWeight;
 	unsigned int externalInputStartCellIndex;

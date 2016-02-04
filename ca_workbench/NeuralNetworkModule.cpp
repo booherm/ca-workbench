@@ -6,11 +6,21 @@ using namespace std;
 NeuralNetworkModule::NeuralNetworkModule(unsigned int rows, unsigned int cols) : CaWorkbenchModule(rows, cols) {
 
 	connectivity = 2;
-	externalInputRowCount = 20;
+	externalInputRowCount = (unsigned int) ((rows * cols) * 0.00025);
 	feedbackInputRowCount = 0;
-	externalOutputRowCount = 20;
+	externalOutputRowCount = (unsigned int)((rows * cols) * 0.00025);
 	autoFeedForward = true;
+	autoNewInput = false;
+	fadeStaleSites = false;
 	activeExternalInputSitePatternId = 1;
+
+	if (externalInputRowCount < 1) {
+		externalInputRowCount = 1;
+	}
+	if (externalOutputRowCount < 1) {
+		externalOutputRowCount = 1;
+	}
+
 
 	initialize();
 }
@@ -35,7 +45,6 @@ void NeuralNetworkModule::iterate()
 	unsigned int globalFiringRateCalcActivations = 0;
 
 	// synchronous read for current state of sites
-	unsigned int siteCount = neuronSites.size();
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		NeuronSite* s = &neuronSites[i];
 
@@ -79,9 +88,11 @@ void NeuralNetworkModule::iterate()
 			}
 			else {
 				// input synapse did not contribute to activation of this neuron, weaken
-				inputSynapse->connectionStrengthWeight -= synapseWeightAdjustmentDelta;
-				if (inputSynapse->connectionStrengthWeight < minSynapseWeight)
-					inputSynapse->connectionStrengthWeight = minSynapseWeight;
+				if (inputSynapse->sourceSiteId > externalInputStartCellIndex) {
+					inputSynapse->connectionStrengthWeight += synapseWeightAdjustmentDecrementDelta;
+					if (inputSynapse->connectionStrengthWeight < minSynapseWeight)
+						inputSynapse->connectionStrengthWeight = minSynapseWeight;
+				}
 				inputSynapse->shouldRender = false;
 			}
 
@@ -205,7 +216,8 @@ inline std::vector<float>* NeuralNetworkModule::getSiteColor(unsigned int siteId
 }
 
 inline unsigned int NeuralNetworkModule::getMaxSiteConnectionsCount() {
-	return connectivity * rows * cols;
+	//return connectivity * rows * cols;
+	return 10 * rows * cols;
 }
 
 inline std::vector<SiteConnection*>* NeuralNetworkModule::getSiteConnections(unsigned int siteId) {
@@ -234,12 +246,13 @@ void NeuralNetworkModule::initialize() {
 	// neural net specific
 	targetFiringRate = 0.25f;
 	firingRateSampleIterations = 0;
-	initialNeuronFiringThreshold = 0.0f;
-	initialSynapseWeight = 0.0f;
+	initialNeuronFiringThreshold = 0.1f;
+	initialSynapseWeight = 1.0f;
 	firingRateThresholdAdjustmentDelta = 0.1f;
 	synapseWeightAdjustmentDelta = 0.1f;
-	minSynapseWeight = -5000.0f;
-	maxSynapseWeight = 5000.0f;
+	synapseWeightAdjustmentDecrementDelta = 0.0f;
+	minSynapseWeight = -1.0f;
+	maxSynapseWeight = 1.0f;
 
 	resetCellStates();
 }
@@ -337,6 +350,7 @@ void NeuralNetworkModule::resetCellStates()
 
 	// initialize remaining site connectivity, arbitrary sites
 	uniform_int_distribution<unsigned int> randInputDist(feedbackInputStartCellIndex, externalOutputStartCellIndex - 1);
+	uniform_real_distribution<float> randFloatDist(-1.0f, 1.0f);
 	for (unsigned int i = internalStartCellIndex; i <= externalOutputEndCellIndex; i++) {
 		NeuronSite* s = &neuronSites[i];
 		for (unsigned int k = 0; k < connectivity; k++) {
@@ -362,8 +376,10 @@ void NeuralNetworkModule::resetCellStates()
 			} while (!validSelection);
 
 			// create synapse connection, store in the master list of synapse connections
-//			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, initialSynapseWeight, false);
+			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, randFloatDist(rnGen), false);
+			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, initialSynapseWeight, false);
 			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
+			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, -1.0f, false);
 			neuralSynapses[neuralSynapsesIndex] = sc;
 
 			// store a reference to this synapse connection in this site's list of input synapse connections

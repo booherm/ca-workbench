@@ -1,15 +1,45 @@
 Ext.ns("CawbUi");
 
-CawbUi.refreshModuleStateCallback = function(stateJson){
-	CawbUi.iterationField.setValue(stateJson.iteration);
-	CawbUi.renderCompleteField.setValue(stateJson.renderComplete);
-	CawbUi.globalFiringRateField.setValue(stateJson.globalFiringRate);
-	CawbUi.globalAverageFiringThreshold.setValue(stateJson.globalAverageFiringThreshold);
-	CawbUi.globalAverageInputWeight.setValue(stateJson.globalAverageInputWeight);
+CawbUi.callbackInProgress = false;
+CawbUi.refreshModuleStateCallback = function (stateJson) {
 
-    // update chart
-	var y = (stateJson.globalFiringRate * 1000) / 1000;
-	CawbUi.chart1.series[0].addPoint([stateJson.iterationx, y], true, true);
+    if (CawbUi.autoIterateField.getValue() && !CawbUi.callbackInProgress) {
+        CawbUi.callbackInProgress = true;
+        var iteration = stateJson.iteration;
+        var globalFiringRate = stateJson.globalFiringRate;
+        var globalAvgFiringThreshold = stateJson.globalAverageFiringThreshold;
+        var globalAvgInputWeight = stateJson.globalAverageInputWeight;
+
+        CawbUi.iterationField.setValue(iteration);
+        CawbUi.renderCompleteField.setValue(stateJson.renderComplete);
+        CawbUi.globalFiringRateField.setValue(globalFiringRate);
+        CawbUi.globalAverageFiringThreshold.setValue(globalAvgFiringThreshold);
+        CawbUi.globalAverageInputWeight.setValue(globalAvgInputWeight);
+
+        // update chart
+        globalFiringRate = (globalFiringRate * 1000) / 1000;
+        globalAvgFiringThreshold = (globalAvgFiringThreshold * 1000) / 1000;
+        globalAvgInputWeight = (globalAvgInputWeight * 1000) / 1000;
+        //CawbUi.chart1.series[0].addPoint([iteration, globalFiringRate], false, true);
+        //CawbUi.chart1.series[1].addPoint([iteration, globalAvgFiringThreshold], false, true);
+        //CawbUi.chart1.redraw();
+
+
+        CawbUi.globalFiringRateData.shift();
+        CawbUi.globalFiringRateData.push({ x: iteration, y: globalFiringRate });
+
+        CawbUi.globalAvgFiringThresholdData.shift();
+        CawbUi.globalAvgFiringThresholdData.push({ x: iteration, y: globalAvgFiringThreshold });
+
+        CawbUi.globalAvgInputWeightData.shift();
+        CawbUi.globalAvgInputWeightData.push({ x: iteration, y: globalAvgInputWeight });
+
+        CawbUi.chart1.series[0].setData(CawbUi.copyChartDataArray(CawbUi.globalFiringRateData), false, false, false);
+        CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgFiringThresholdData), false, false, false);
+        CawbUi.chart1.series[2].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgInputWeightData), false, false, false);
+        CawbUi.chart1.redraw();
+        CawbUi.callbackInProgress = false;
+    }
 };
 
 CawbUi.refreshModuleConfigCallback = function(configJson){
@@ -417,7 +447,10 @@ CawbUi.init = function()
         width: 90,
         margin: "0 10 15 10",
         handler: function () {
+            clearInterval(CawbUi.refreshInterval);
+            CawbUi.resetInitialChartData();
             CaWorkbench.setModuleConfigValue("reset", null);
+            CawbUi.refreshInterval = setInterval(function () { CaWorkbench.refreshModuleState(); }, 500);
         }
     });
 
@@ -465,7 +498,7 @@ CawbUi.init = function()
 	CawbUi.chartsPanel = Ext.create("Sms.form.Panel", {
 	    region: "south",
 	    title: "Analysis",
-        height: 400,
+        height: 450,
 	    html: "<div id='chart_container'></div>"
 	});
 
@@ -480,18 +513,41 @@ CawbUi.init = function()
 	CawbUi.initChart();
 	CawbUi.refreshModuleConfigInProgress = false;
 	CawbUi.refresRenderWindowStateInProgress = false;
-	setInterval(function () { CaWorkbench.refreshModuleState(); }, 50);
+	CawbUi.refreshInterval = setInterval(function () { CaWorkbench.refreshModuleState(); }, 500);
 	CaWorkbench.refreshModuleConfig();
 	CaWorkbench.refreshRenderWindowState();
 };
 
-CawbUi.initChart = function () {
+CawbUi.copyChartDataArray = function (chartData) {
 
+    var copiedData = [];
+    for (var i = 0; i < chartData.length; i++) {
+        var sourceObj = chartData[i];
+        copiedData.push({ x: sourceObj.x, y: sourceObj.y });
+    }
+
+    return copiedData;
+};
+
+CawbUi.resetInitialChartData = function () {
     var pointsToDisplay = 100;
-    var initialData = [];
-    for(var i = 0; i < pointsToDisplay; i++)
-        initialData.push(0.0);
+    CawbUi.globalFiringRateData = [];
+    CawbUi.globalAvgFiringThresholdData = [];
+    CawbUi.globalAvgInputWeightData = [];
 
+    for (var i = -pointsToDisplay; i < 0; i++) {
+        CawbUi.globalFiringRateData.push({ x: i, y: null });
+        CawbUi.globalAvgFiringThresholdData.push({ x: i, y: null });
+        CawbUi.globalAvgInputWeightData.push({ x: i, y: null });
+    }
+
+    CawbUi.chart1.series[0].setData(CawbUi.copyChartDataArray(CawbUi.globalFiringRateData), false, false, false);
+    CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgFiringThresholdData), false, false, false);
+    CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgInputWeightData), false, false, false);
+    CawbUi.chart1.redraw();
+};
+
+CawbUi.initChart = function () {
     CawbUi.chart1 = new Highcharts.Chart({
         credits: {enabled: false},
         chart: {
@@ -499,25 +555,51 @@ CawbUi.initChart = function () {
             renderTo: "chart_container"
         },
         title: {
-            text: "Global Firing Rate"
+            text: "Aggregate Analysis"
         },
         xAxis: {
             title: { text: "Iteration" },
             type: "category"
         },
-        yAxis: {
+        yAxis: [{
+            id: "globalFiringRateAxis",
             title: {text: "Global Firing Rate"},
             min: 0,
             max: 1
         },
+        {
+            id: "globalAvgFiringThresholdAxis",
+            title: { text: "Global Avg. Firing Threshold" },
+            opposite: true
+//            min: -1000,
+//            max: 1000
+        },
+        {
+            id: "globalAvgInputWeightAxis",
+            title: { text: "Global Avg. Input Weight" },
+            opposite: true
+//            min: -100,
+  //          max: 100
+        }],
         series: [{
             type: "line",
             name: "Global Firing Rate",
-            data: initialData
+            yAxis: "globalFiringRateAxis"
+        },
+        {
+            type: "line",
+            name: "Global Avg. Firing Threshold",
+            yAxis: "globalAvgFiringThresholdAxis"
+        },
+        {
+            type: "line",
+            name: "Global Avg. Input Weight",
+            yAxis: "globalAvgInputWeightAxis"
         }],
-        tooltip: {enabled: false}
+        tooltip: { enabled: false }
     });
 
+    CawbUi.resetInitialChartData();
 };
 
 Ext.onReady(function(){

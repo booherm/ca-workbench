@@ -14,8 +14,8 @@
 
 #include "PerformanceTimer.hpp"
 
-const GLuint GL_WINDOW_WIDTH = 1800;
-const GLuint GL_WINDOW_HEIGHT = 900;
+const GLuint GL_WINDOW_WIDTH = 1920;
+const GLuint GL_WINDOW_HEIGHT = 1080;
 const string SCREENSHOT_SAVE_DIRECTORY = "c:\\ca_workbench_screenshots\\";
 
 class CaWorkbenchRenderWindow {

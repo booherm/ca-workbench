@@ -42,6 +42,8 @@ void CaWorkbenchRenderWindow::initGlWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 	glWindow = glfwCreateWindow(GL_WINDOW_WIDTH, GL_WINDOW_HEIGHT, "CA Workbench", nullptr, nullptr);
+	glfwSetWindowPos(glWindow, 1920, 0);
+
 	if (glWindow == nullptr) {
 		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
