@@ -16,10 +16,12 @@ void NeuralNetworkModule::getConfigJson(Json::Value& configJson) {
 	configJson["fadeStaleSites"] = fadeStaleSites;
 	configJson["targetFiringRate"] = targetFiringRate;
 	configJson["initialNeuronFiringThreshold"] = initialNeuronFiringThreshold;
-	configJson["initialSynapseWeight"] = initialSynapseWeight;
+	configJson["initialExternalInputSynapseWeight"] = initialExternalInputSynapseWeight;
+	configJson["initialInternalSynapseWeight"] = initialInternalSynapseWeight;
 	configJson["firingRateSampleIterations"] = firingRateSampleIterations;
 	configJson["firingRateThresholdAdjustmentDelta"] = firingRateThresholdAdjustmentDelta;
-	configJson["synapseWeightAdjustmentDelta"] = synapseWeightAdjustmentDelta;
+	configJson["synapseWeightStrengthenDelta"] = synapseWeightStrengthenDelta;
+	configJson["synapseWeightWeakenDelta"] = synapseWeightWeakenDelta;
 	configJson["minSynapseWeight"] = minSynapseWeight;
 	configJson["maxSynapseWeight"] = maxSynapseWeight;
 	configJson["activeExternalInputSitePatternId"] = activeExternalInputSitePatternId;
@@ -64,8 +66,11 @@ bool NeuralNetworkModule::setConfigurationValue(const ConfigSetting& setting) {
 		setInitialNeuronFiringThreshold(stof(setting.value));
 		return true;
 	}
-	else if (setting.key == "initialSynapseWeight") {
-		return setInitialSynapseWeight(stof(setting.value));
+	else if (setting.key == "initialExternalInputSynapseWeight") {
+		return setInitialExternalInputSynapseWeight(stof(setting.value));
+	}
+	else if (setting.key == "initialInternalSynapseWeight") {
+		return setInitialInternalSynapseWeight(stof(setting.value));
 	}
 	else if (setting.key == "firingRateSampleIterations") {
 		setFiringRateSampleIterations(stoul(setting.value));
@@ -75,8 +80,12 @@ bool NeuralNetworkModule::setConfigurationValue(const ConfigSetting& setting) {
 		setFiringRateThresholdAdjustmentDelta(stof(setting.value));
 		return true;
 	}
-	else if (setting.key == "synapseWeightAdjustmentDelta") {
-		setSynapseWeightAdjustmentDelta(stof(setting.value));
+	else if (setting.key == "synapseWeightStrengthenDelta") {
+		setSynapseWeightStrengthenDelta(stof(setting.value));
+		return true;
+	}
+	else if (setting.key == "synapseWeightWeakenDelta") {
+		setSynapseWeightWeakenDelta(stof(setting.value));
 		return true;
 	}
 	else if (setting.key == "minSynapseWeight") {
@@ -244,7 +253,7 @@ bool NeuralNetworkModule::setActiveExternalInputSitePatternId(unsigned int patte
 }
 
 bool NeuralNetworkModule::setConnectivity(unsigned int connectivity) {
-	if (connectivity <= 100) {
+	if (connectivity <= maxConnectivity) {
 		this->connectivity = connectivity;
 		resetCellStates();
 	}
@@ -276,13 +285,23 @@ void NeuralNetworkModule::setInitialNeuronFiringThreshold(float initialNeuronFir
 	this->initialNeuronFiringThreshold = initialNeuronFiringThreshold;
 }
 
-bool NeuralNetworkModule::setInitialSynapseWeight(float initialSynapseWeight) {
-	if (initialSynapseWeight < minSynapseWeight || initialSynapseWeight > maxSynapseWeight) {
-		cout << "initial synapse weight out of bounds" << endl;
+bool NeuralNetworkModule::setInitialExternalInputSynapseWeight(float initialExternalInputSynapseWeight) {
+	if (initialExternalInputSynapseWeight < minSynapseWeight || initialExternalInputSynapseWeight > maxSynapseWeight) {
+		cout << "initial external input synapse weight out of bounds" << endl;
 		return false;
 	}
 
-	this->initialSynapseWeight = initialSynapseWeight;
+	this->initialExternalInputSynapseWeight = initialExternalInputSynapseWeight;
+	return true;
+}
+
+bool NeuralNetworkModule::setInitialInternalSynapseWeight(float initialInternalSynapseWeight) {
+	if (initialInternalSynapseWeight < minSynapseWeight || initialInternalSynapseWeight > maxSynapseWeight) {
+		cout << "initial internal synapse weight out of bounds" << endl;
+		return false;
+	}
+
+	this->initialInternalSynapseWeight = initialInternalSynapseWeight;
 	return true;
 }
 
@@ -294,8 +313,12 @@ void NeuralNetworkModule::setFiringRateThresholdAdjustmentDelta(float firingRate
 	this->firingRateThresholdAdjustmentDelta = firingRateThresholdAdjustmentDelta;
 }
 
-void NeuralNetworkModule::setSynapseWeightAdjustmentDelta(float synapseWeightAdjustmentDelta) {
-	this->synapseWeightAdjustmentDelta = synapseWeightAdjustmentDelta;
+void NeuralNetworkModule::setSynapseWeightStrengthenDelta(float synapseWeightStrengthenDelta) {
+	this->synapseWeightStrengthenDelta = synapseWeightStrengthenDelta;
+}
+
+void NeuralNetworkModule::setSynapseWeightWeakenDelta(float synapseWeightWeakenDelta) {
+	this->synapseWeightWeakenDelta = synapseWeightWeakenDelta;
 }
 
 void NeuralNetworkModule::setMinSynapseWeight(float minSynapseWeight) {

@@ -80,7 +80,7 @@ void NeuralNetworkModule::iterate()
 
 			if (newState && neuronSites[inputSynapse->sourceSiteId].currentState) {
 				// input synapse source neuron was active and this neuron fired, strengthen
-				inputSynapse->connectionStrengthWeight += synapseWeightAdjustmentDelta;
+				inputSynapse->connectionStrengthWeight += synapseWeightStrengthenDelta;
 				if (inputSynapse->connectionStrengthWeight > maxSynapseWeight)
 					inputSynapse->connectionStrengthWeight = maxSynapseWeight;
 				inputSynapse->shouldRender = true;
@@ -89,7 +89,7 @@ void NeuralNetworkModule::iterate()
 			else {
 				// input synapse did not contribute to activation of this neuron, weaken
 				if (inputSynapse->sourceSiteId > externalInputStartCellIndex) {
-					inputSynapse->connectionStrengthWeight += synapseWeightAdjustmentDecrementDelta;
+					inputSynapse->connectionStrengthWeight += synapseWeightWeakenDelta;
 					if (inputSynapse->connectionStrengthWeight < minSynapseWeight)
 						inputSynapse->connectionStrengthWeight = minSynapseWeight;
 				}
@@ -216,8 +216,7 @@ inline std::vector<float>* NeuralNetworkModule::getSiteColor(unsigned int siteId
 }
 
 inline unsigned int NeuralNetworkModule::getMaxSiteConnectionsCount() {
-	//return connectivity * rows * cols;
-	return 10 * rows * cols;
+	return maxConnectivity * rows * cols;
 }
 
 inline std::vector<SiteConnection*>* NeuralNetworkModule::getSiteConnections(unsigned int siteId) {
@@ -247,10 +246,11 @@ void NeuralNetworkModule::initialize() {
 	targetFiringRate = 0.25f;
 	firingRateSampleIterations = 0;
 	initialNeuronFiringThreshold = 0.1f;
-	initialSynapseWeight = 1.0f;
+	initialExternalInputSynapseWeight = 1.0f;
+	initialInternalSynapseWeight = 0.0f;
 	firingRateThresholdAdjustmentDelta = 0.1f;
-	synapseWeightAdjustmentDelta = 0.1f;
-	synapseWeightAdjustmentDecrementDelta = 0.0f;
+	synapseWeightStrengthenDelta = 0.1f;
+	synapseWeightWeakenDelta = 0.0f;
 	minSynapseWeight = -1.0f;
 	maxSynapseWeight = 1.0f;
 
@@ -339,7 +339,7 @@ void NeuralNetworkModule::resetCellStates()
 		} while (!validSelection);
 
 		// create synapse connection, store in the master list of synapse connections
-		NeuralSynapse sc(i, outputSiteId, initialConnectionColor, initialSynapseWeight, false);
+		NeuralSynapse sc(i, outputSiteId, initialConnectionColor, initialExternalInputSynapseWeight, false);
 		neuralSynapses[neuralSynapsesIndex] = sc;
 
 		// store a reference to this new connection in the outputSite's list of input synapse connections
@@ -376,10 +376,7 @@ void NeuralNetworkModule::resetCellStates()
 			} while (!validSelection);
 
 			// create synapse connection, store in the master list of synapse connections
-			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, randFloatDist(rnGen), false);
-			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, initialSynapseWeight, false);
-			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, 0.0f, false);
-			//NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, -1.0f, false);
+			NeuralSynapse sc(inputSite, s->siteId, initialConnectionColor, initialInternalSynapseWeight, false);
 			neuralSynapses[neuralSynapsesIndex] = sc;
 
 			// store a reference to this synapse connection in this site's list of input synapse connections

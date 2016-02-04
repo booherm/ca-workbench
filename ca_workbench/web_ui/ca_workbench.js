@@ -1,44 +1,41 @@
 Ext.ns("CawbUi");
 
-CawbUi.callbackInProgress = false;
 CawbUi.refreshModuleStateCallback = function (stateJson) {
 
-    if (CawbUi.autoIterateField.getValue() && !CawbUi.callbackInProgress) {
-        CawbUi.callbackInProgress = true;
+    if (CawbUi.autoIterateField.getValue()) {
+        // get state variables
         var iteration = stateJson.iteration;
         var globalFiringRate = stateJson.globalFiringRate;
         var globalAvgFiringThreshold = stateJson.globalAverageFiringThreshold;
         var globalAvgInputWeight = stateJson.globalAverageInputWeight;
 
+        // set field values
         CawbUi.iterationField.setValue(iteration);
         CawbUi.renderCompleteField.setValue(stateJson.renderComplete);
         CawbUi.globalFiringRateField.setValue(globalFiringRate);
         CawbUi.globalAverageFiringThreshold.setValue(globalAvgFiringThreshold);
         CawbUi.globalAverageInputWeight.setValue(globalAvgInputWeight);
 
-        // update chart
+        // round for chart
         globalFiringRate = (globalFiringRate * 1000) / 1000;
         globalAvgFiringThreshold = (globalAvgFiringThreshold * 1000) / 1000;
         globalAvgInputWeight = (globalAvgInputWeight * 1000) / 1000;
-        //CawbUi.chart1.series[0].addPoint([iteration, globalFiringRate], false, true);
-        //CawbUi.chart1.series[1].addPoint([iteration, globalAvgFiringThreshold], false, true);
-        //CawbUi.chart1.redraw();
 
-
+        // add new point, rotate out the first
         CawbUi.globalFiringRateData.shift();
         CawbUi.globalFiringRateData.push({ x: iteration, y: globalFiringRate });
-
         CawbUi.globalAvgFiringThresholdData.shift();
         CawbUi.globalAvgFiringThresholdData.push({ x: iteration, y: globalAvgFiringThreshold });
-
         CawbUi.globalAvgInputWeightData.shift();
         CawbUi.globalAvgInputWeightData.push({ x: iteration, y: globalAvgInputWeight });
 
-        CawbUi.chart1.series[0].setData(CawbUi.copyChartDataArray(CawbUi.globalFiringRateData), false, false, false);
-        CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgFiringThresholdData), false, false, false);
-        CawbUi.chart1.series[2].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgInputWeightData), false, false, false);
-        CawbUi.chart1.redraw();
-        CawbUi.callbackInProgress = false;
+        // set on chart
+        CawbUi.aggAnalysisChart.series[0].setData(CawbUi.globalFiringRateData, false, false, false);
+        CawbUi.aggAnalysisChart.series[1].setData(CawbUi.globalAvgFiringThresholdData, false, false, false);
+        CawbUi.aggAnalysisChart.series[2].setData(CawbUi.globalAvgInputWeightData, false, false, false);
+
+        // redraw chart
+        CawbUi.aggAnalysisChart.redraw();
     }
 };
 
@@ -55,10 +52,12 @@ CawbUi.refreshModuleConfigCallback = function(configJson){
 	CawbUi.fadeStaleSitesField.setValue(configJson.fadeStaleSites);
 	CawbUi.targetFiringRateField.setValue(configJson.targetFiringRate);
 	CawbUi.initialNeuronFiringThresholdField.setValue(configJson.initialNeuronFiringThreshold);
-	CawbUi.initialSynapseWeightField.setValue(configJson.initialSynapseWeight);
+	CawbUi.initialExternalInputSynapseWeightField.setValue(configJson.initialExternalInputSynapseWeight);
+	CawbUi.initialInternalSynapseWeightField.setValue(configJson.initialInternalSynapseWeight);
 	CawbUi.firingRateSampleIterationsField.setValue(configJson.firingRateSampleIterations);
 	CawbUi.firingRateThresholdAdjustmentDeltaField.setValue(configJson.firingRateThresholdAdjustmentDelta);
-	CawbUi.synapseWeightAdjustmentDeltaField.setValue(configJson.synapseWeightAdjustmentDelta);
+	CawbUi.synapseWeightStrengthenDeltaField.setValue(configJson.synapseWeightStrengthenDelta);
+	CawbUi.synapseWeightWeakenDeltaField.setValue(configJson.synapseWeightWeakenDelta);
 	CawbUi.minSynapseWeightField.setValue(configJson.minSynapseWeight);
 	CawbUi.maxSynapseWeightField.setValue(configJson.maxSynapseWeight);
 	CawbUi.activeExternalInputSitePatternIdField.setValue(configJson.activeExternalInputSitePatternId);
@@ -95,30 +94,15 @@ CawbUi.sendRenderWindowCommand = function (command) {
 
 CawbUi.init = function()
 {
-    ////////////////////////////////////////// debugging buttons /////////////////////////////////////////////
-	CawbUi.reloadButton = Ext.create("Ext.Button", {
-		text: "Reload Page",
-		handler: function() {
-			document.location.reload();
-		}
-	});
-
-	CawbUi.updateChartButton = Ext.create("Ext.Button", {
-	    text: "Update Chart",
-	    handler: function () {
-	        CawbUi.updateChart();
-	    }
-	});
-
     /////////////////////////////////// module configuration /////////////////////////////////////////////
 	CawbUi.rowsField = Ext.create("Ext.form.field.Display", {
 		fieldLabel: "Rows",
-		labelWidth: 250
+		labelWidth: 200
 	});
 	
 	CawbUi.columnsField = Ext.create("Ext.form.field.Display", {
 		fieldLabel: "Columns",
-		labelWidth: 250
+		labelWidth: 200
 	});
 	
 	CawbUi.connectivityField = Ext.create("Ext.form.field.Number", {
@@ -126,9 +110,9 @@ CawbUi.init = function()
 		itemId: "connectivity",
 		allowBlank: false,
 		repeatTriggerClick: false,
-		labelWidth: 250,
+		labelWidth: 200,
         minValue: 0,
-        maxValue: 99,
+        maxValue: 20,
 		allowDecimals: false,
 		listeners: {change: CawbUi.updateModuleConfigField}
 	});
@@ -138,7 +122,7 @@ CawbUi.init = function()
 		itemId: "externalInputRowCount",
 		allowBlank: false,
 		repeatTriggerClick: false,
-		labelWidth: 250,
+		labelWidth: 200,
         minValue: 1,
         maxValue: 1000,
 		allowDecimals: false,
@@ -150,7 +134,7 @@ CawbUi.init = function()
 		itemId: "feedbackInputRowCount",
 		allowBlank: false,
 		repeatTriggerClick: false,
-		labelWidth: 250,
+		labelWidth: 200,
         minValue: 0,
         maxValue: 1000,
 		allowDecimals: false,
@@ -162,7 +146,7 @@ CawbUi.init = function()
 		itemId: "externalOutputRowCount",
 		allowBlank: false,
 		repeatTriggerClick: false,
-		labelWidth: 250,
+		labelWidth: 200,
         minValue: 0,
         maxValue: 1000,
 		allowDecimals: false,
@@ -172,35 +156,34 @@ CawbUi.init = function()
 	CawbUi.autoFeedForwardField = Ext.create("Ext.form.field.Checkbox", {
 		fieldLabel: "Auto Feed Forward",
 		itemId: "autoFeedForward",
-		labelWidth: 250,
+		labelWidth: 200,
 		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.autoNewInputField = Ext.create("Ext.form.field.Checkbox", {
 		fieldLabel: "Auto New Input",
 		itemId: "autoNewInput",
-		labelWidth: 250,
+		labelWidth: 200,
 		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.fadeStaleSitesField = Ext.create("Ext.form.field.Checkbox", {
 	    fieldLabel: "Fade Stale Sites",
 	    itemId: "fadeStaleSites",
-	    labelWidth: 250,
+	    labelWidth: 200,
 	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
-	CawbUi.targetFiringRateField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Target Firing Rate",
-		itemId: "targetFiringRate",
-		allowBlank: false,
-		repeatTriggerClick: false,
-		labelWidth: 250,
-		minValue: 0,
-		maxValue: 1,
-		step: 0.1,
-		decimalPrecision: 3,
-		listeners: { change: CawbUi.updateModuleConfigField }
+	CawbUi.activeExternalInputSitePatternIdField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Active Ext. Input Site Pattern ID",
+	    itemId: "activeExternalInputSitePatternId",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 200,
+	    minValue: 0,
+	    maxValue: 3,
+	    step: 1,
+	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.initialNeuronFiringThresholdField = Ext.create("Ext.form.field.Number", {
@@ -216,9 +199,47 @@ CawbUi.init = function()
 		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
-	CawbUi.initialSynapseWeightField = Ext.create("Ext.form.field.Number", {
-	    fieldLabel: "Initial Synapse Weight",
-	    itemId: "initialSynapseWeight",
+	CawbUi.targetFiringRateField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Target Firing Rate",
+	    itemId: "targetFiringRate",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: 0,
+	    maxValue: 1,
+	    step: 0.1,
+	    decimalPrecision: 3,
+	    listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.firingRateSampleIterationsField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Firing Rate Sample Iterations",
+	    itemId: "firingRateSampleIterations",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: 0,
+	    maxValue: 1000,
+	    allowDecimals: false,
+	    listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.firingRateThresholdAdjustmentDeltaField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Firing Rate Threshold Adjustment Delta",
+	    itemId: "firingRateThresholdAdjustmentDelta",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: 0,
+	    maxValue: 1000,
+	    step: 1,
+	    decimalPrecision: 3,
+	    listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.initialExternalInputSynapseWeightField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Initial Ext. Input Synapse Weight",
+	    itemId: "initialExternalInputSynapseWeight",
 	    allowBlank: false,
 	    repeatTriggerClick: false,
 	    labelWidth: 250,
@@ -229,42 +250,43 @@ CawbUi.init = function()
 	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
-	CawbUi.firingRateSampleIterationsField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Firing Rate Sample Iterations",
-		itemId: "firingRateSampleIterations",
+	CawbUi.initialInternalSynapseWeightField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Initial Internal Synapse Weight",
+	    itemId: "initialInternalSynapseWeight",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: -5000,
+	    maxValue: 5000,
+	    step: 0.1,
+	    decimalPrecision: 3,
+	    listeners: { change: CawbUi.updateModuleConfigField }
+	});
+
+	CawbUi.synapseWeightStrengthenDeltaField = Ext.create("Ext.form.field.Number", {
+		fieldLabel: "Synapse Weight Strengthen Delta",
+		itemId: "synapseWeightStrengthenDelta",
 		allowBlank: false,
 		repeatTriggerClick: false,
 		labelWidth: 250,
-        minValue: 0,
-        maxValue: 1000,
-		allowDecimals: false,
+		minValue: -1000,
+		maxValue: 1000,
+		step: 0.1,
+		decimalPrecision: 3,
 		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
-	CawbUi.firingRateThresholdAdjustmentDeltaField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Firing Rate Threshold Adjustment Delta",
-		itemId: "firingRateThresholdAdjustmentDelta",
-		allowBlank: false,
-		repeatTriggerClick: false,
-		labelWidth: 250,
-		minValue: 0,
-		maxValue: 1000,
-		step: 1,
-		decimalPrecision: 3,
-		listeners: { change: CawbUi.updateModuleConfigField }
-	});
-	
-	CawbUi.synapseWeightAdjustmentDeltaField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Synapse Weight Adjustment Delta",
-		itemId: "synapseWeightAdjustmentDelta",
-		allowBlank: false,
-		repeatTriggerClick: false,
-		labelWidth: 250,
-		minValue: 0,
-		maxValue: 1000,
-		step: 1,
-		decimalPrecision: 3,
-		listeners: { change: CawbUi.updateModuleConfigField }
+	CawbUi.synapseWeightWeakenDeltaField = Ext.create("Ext.form.field.Number", {
+	    fieldLabel: "Synapse Weight Weaken Delta",
+	    itemId: "synapseWeightWeakenDelta",
+	    allowBlank: false,
+	    repeatTriggerClick: false,
+	    labelWidth: 250,
+	    minValue: -1000,
+	    maxValue: 1000,
+	    step: 0.1,
+	    decimalPrecision: 3,
+	    listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
 	CawbUi.minSynapseWeightField = Ext.create("Ext.form.field.Number", {
@@ -293,83 +315,44 @@ CawbUi.init = function()
 		listeners: { change: CawbUi.updateModuleConfigField }
 	});
 
-	CawbUi.activeExternalInputSitePatternIdField = Ext.create("Ext.form.field.Number", {
-		fieldLabel: "Active External Input Site Pattern ID",
-		itemId: "activeExternalInputSitePatternId",
-		allowBlank: false,
-		repeatTriggerClick: false,
-		labelWidth: 250,
-		minValue: 0,
-		maxValue: 3,
-		step: 1,
-		listeners: { change: CawbUi.updateModuleConfigField }
-	});
-
 	CawbUi.configurationFieldSet = Ext.create("Ext.form.FieldSet", {
 		title: "Configuration",
-		width: 500,
-		padding: "0 0 0 20",
+		width: 825,
+		layout: { type: "table", columns: 3, tdAttrs: { style: { verticalAlign: "top" } } },
 		items: [
 			CawbUi.rowsField,
+            {xtype: "component", width: 20},
+            CawbUi.initialNeuronFiringThresholdField,
 			CawbUi.columnsField,
+            {xtype: "component", width: 20},
+            CawbUi.targetFiringRateField,
 			CawbUi.connectivityField,
+            {xtype: "component", width: 20},
+            CawbUi.firingRateSampleIterationsField,
 			CawbUi.externalInputRowCountField,
+            {xtype: "component", width: 20},
+            CawbUi.firingRateThresholdAdjustmentDeltaField,
 			CawbUi.feedbackInputRowCountField,
+            {xtype: "component", width: 20},
+            CawbUi.initialExternalInputSynapseWeightField,
 			CawbUi.externalOutputRowCountField,
+            {xtype: "component", width: 20},
+            CawbUi.initialInternalSynapseWeightField,
 			CawbUi.autoFeedForwardField,
+            {xtype: "component", width: 20},
+            CawbUi.synapseWeightStrengthenDeltaField,
 			CawbUi.autoNewInputField,
+            {xtype: "component", width: 20},
+            CawbUi.synapseWeightWeakenDeltaField,
             CawbUi.fadeStaleSitesField,
-			CawbUi.targetFiringRateField,
-			CawbUi.initialNeuronFiringThresholdField,
-            CawbUi.initialSynapseWeightField,
-			CawbUi.firingRateSampleIterationsField,
-			CawbUi.firingRateThresholdAdjustmentDeltaField,
-			CawbUi.synapseWeightAdjustmentDeltaField,
-			CawbUi.minSynapseWeightField,
-			CawbUi.maxSynapseWeightField,
-			CawbUi.activeExternalInputSitePatternIdField,
-			CawbUi.reloadButton,
-            CawbUi.updateChartButton
+            {xtype: "component", width: 20},
+            CawbUi.minSynapseWeightField,
+            CawbUi.activeExternalInputSitePatternIdField,
+            {xtype: "component", width: 20},
+            CawbUi.maxSynapseWeightField
 		]
 	});
-
-    ////////////////////////////////////// module state /////////////////////////////////////////////
-	CawbUi.iterationField = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Iteration",
-		labelWidth: 200
-	});
-
-	CawbUi.renderCompleteField = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Render Complete",
-		labelWidth: 200
-	});
-
-	CawbUi.globalFiringRateField = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Global Firing Rate",
-		labelWidth: 200
-	});
-	
-	CawbUi.globalAverageFiringThreshold = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Global Average Firing Threshold",
-		labelWidth: 200
-	});
-
-	CawbUi.globalAverageInputWeight = Ext.create("Ext.form.field.Display", {
-		fieldLabel: "Global Average Input Weight",
-		labelWidth: 200
-	});
-
-	CawbUi.stateFieldSet = Ext.create("Ext.form.FieldSet", {
-	    title: "State",
-		items: [
-			CawbUi.iterationField,
-			CawbUi.renderCompleteField,
-			CawbUi.globalFiringRateField,
-			CawbUi.globalAverageFiringThreshold,
-			CawbUi.globalAverageInputWeight
-		]
-	});
-	
+    	
     ///////////////////////////////////// render window controls /////////////////////////////////////////////
 	CawbUi.pauseButton = Ext.create("Ext.Button", {
 	    text: "Pause",
@@ -442,6 +425,14 @@ CawbUi.init = function()
 	});
 
     ///////////////////////////////////// module controls /////////////////////////////////////////////
+    CawbUi.reloadButton = Ext.create("Ext.Button", {
+        text: "Reload Page",
+        width: 90,
+        handler: function () {
+            document.location.reload();
+        }
+    });
+
     CawbUi.resetButton = Ext.create("Ext.Button", {
         text: "Reset",
         width: 90,
@@ -458,7 +449,8 @@ CawbUi.init = function()
         border: false,
         layout: { type: "hbox" },
         items: [
-			CawbUi.resetButton
+			CawbUi.resetButton,
+            CawbUi.reloadButton
         ]
     });
 
@@ -471,13 +463,50 @@ CawbUi.init = function()
         ]
     });
 
+    ////////////////////////////////////// module state /////////////////////////////////////////////
+    CawbUi.iterationField = Ext.create("Ext.form.field.Display", {
+        fieldLabel: "Iteration",
+        labelWidth: 200
+    });
+
+    CawbUi.renderCompleteField = Ext.create("Ext.form.field.Display", {
+        fieldLabel: "Render Complete",
+        labelWidth: 200
+    });
+
+    CawbUi.globalFiringRateField = Ext.create("Ext.form.field.Display", {
+        fieldLabel: "Global Firing Rate",
+        labelWidth: 200
+    });
+
+    CawbUi.globalAverageFiringThreshold = Ext.create("Ext.form.field.Display", {
+        fieldLabel: "Global Average Firing Threshold",
+        labelWidth: 200
+    });
+
+    CawbUi.globalAverageInputWeight = Ext.create("Ext.form.field.Display", {
+        fieldLabel: "Global Average Input Weight",
+        labelWidth: 200
+    });
+
+    CawbUi.stateFieldSet = Ext.create("Ext.form.FieldSet", {
+        title: "State",
+        width: 350,
+        items: [
+			CawbUi.iterationField,
+			CawbUi.renderCompleteField,
+			CawbUi.globalFiringRateField,
+			CawbUi.globalAverageFiringThreshold,
+			CawbUi.globalAverageInputWeight
+        ]
+    });
+
     ////////////////////////////////////////// layout /////////////////////////////////////////////
-	CawbUi.moduleRightPanelsContainer = Ext.create("Ext.panel.Panel", {
+	CawbUi.moduleMiddlePanelsContainer = Ext.create("Ext.panel.Panel", {
         border: false,
 	    layout: {type: "vbox", align: "stretch"},
-	    width: 450,
+	    width: 325,
 	    items: [
-            CawbUi.stateFieldSet,
             CawbUi.renderWindowControlsFieldSet,
             CawbUi.moduleControlsFieldSet
         ]
@@ -486,20 +515,22 @@ CawbUi.init = function()
 	CawbUi.modulePanel = Ext.create("Sms.form.Panel", {
 		region: "center",
 		title: "Module",
-		layout: {type: "table", columns: 4, tdAttrs: {style: {verticalAlign: "top"}}},
+		layout: {type: "table", columns: 6, tdAttrs: {style: {verticalAlign: "top"}}},
 		items:  [
 			{xtype: "component", width: 20},
 			CawbUi.configurationFieldSet,
 			{xtype: "component", width: 20},
-			CawbUi.moduleRightPanelsContainer
+			CawbUi.moduleMiddlePanelsContainer,
+            { xtype: "component", width: 20 },
+            CawbUi.stateFieldSet
 		]
 	});
 
 	CawbUi.chartsPanel = Ext.create("Sms.form.Panel", {
 	    region: "south",
 	    title: "Analysis",
-        height: 450,
-	    html: "<div id='chart_container'></div>"
+        height: 655,
+	    html: "<div id='chart_container' style='height: 610px;'></div>"
 	});
 
 	CawbUi.viewport = Ext.create("Ext.container.Viewport", {
@@ -518,17 +549,6 @@ CawbUi.init = function()
 	CaWorkbench.refreshRenderWindowState();
 };
 
-CawbUi.copyChartDataArray = function (chartData) {
-
-    var copiedData = [];
-    for (var i = 0; i < chartData.length; i++) {
-        var sourceObj = chartData[i];
-        copiedData.push({ x: sourceObj.x, y: sourceObj.y });
-    }
-
-    return copiedData;
-};
-
 CawbUi.resetInitialChartData = function () {
     var pointsToDisplay = 100;
     CawbUi.globalFiringRateData = [];
@@ -541,18 +561,22 @@ CawbUi.resetInitialChartData = function () {
         CawbUi.globalAvgInputWeightData.push({ x: i, y: null });
     }
 
-    CawbUi.chart1.series[0].setData(CawbUi.copyChartDataArray(CawbUi.globalFiringRateData), false, false, false);
-    CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgFiringThresholdData), false, false, false);
-    CawbUi.chart1.series[1].setData(CawbUi.copyChartDataArray(CawbUi.globalAvgInputWeightData), false, false, false);
-    CawbUi.chart1.redraw();
+    CawbUi.aggAnalysisChart.series[0].setData(CawbUi.globalFiringRateData, false, false, false);
+    CawbUi.aggAnalysisChart.series[1].setData(CawbUi.globalAvgFiringThresholdData, false, false, false);
+    CawbUi.aggAnalysisChart.series[1].setData(CawbUi.globalAvgInputWeightData, false, false, false);
+    CawbUi.aggAnalysisChart.redraw();
 };
 
 CawbUi.initChart = function () {
-    CawbUi.chart1 = new Highcharts.Chart({
+    CawbUi.aggAnalysisChart = new Highcharts.Chart({
         credits: {enabled: false},
         chart: {
             animation: false,
-            renderTo: "chart_container"
+            renderTo: "chart_container",
+            style: {
+                fontFamily: "Lucida Console",
+                fontWeight: "bold"
+            }
         },
         title: {
             text: "Aggregate Analysis"
@@ -563,23 +587,22 @@ CawbUi.initChart = function () {
         },
         yAxis: [{
             id: "globalFiringRateAxis",
-            title: {text: "Global Firing Rate"},
-            min: 0,
+            title: { text: "Global Firing Rate" },
+            labels: { format: "{value:,.2f}" },
+            min: 0, 
             max: 1
         },
         {
             id: "globalAvgFiringThresholdAxis",
             title: { text: "Global Avg. Firing Threshold" },
+            labels: { format: "{value:,.2f}" },
             opposite: true
-//            min: -1000,
-//            max: 1000
         },
         {
             id: "globalAvgInputWeightAxis",
             title: { text: "Global Avg. Input Weight" },
+            labels: { format: "{value:,.2f}" },
             opposite: true
-//            min: -100,
-  //          max: 100
         }],
         series: [{
             type: "line",
@@ -603,6 +626,5 @@ CawbUi.initChart = function () {
 };
 
 Ext.onReady(function(){
-	
 	CawbUi.init();
 });
