@@ -1,7 +1,6 @@
 #ifndef CAWORKBENCHRENDERWINDOW_HPP
 #define CAWORKBENCHRENDERWINDOW_HPP
 
-#define GLEW_STATIC
 #include "Util.hpp"
 #include <glew.h>
 #include <glfw3.h>
