@@ -17,7 +17,7 @@ void CaWorkbenchModule::iterate() {
 void CaWorkbenchModule::handleInputAction(int action, int key) {
 }
 
-inline bool CaWorkbenchModule::getSiteActive(unsigned int siteId) {
+inline unsigned char CaWorkbenchModule::getSiteState(unsigned int siteId) {
 	return sites[siteId].currentState;
 }
 

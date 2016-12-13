@@ -416,7 +416,7 @@ void CaWorkbenchRenderWindow::updateModuleRenderData()
 
 		for (unsigned int c = 0; c < cols; c++) {
 
-			if (module->getSiteActive(siteIndex)) {
+			if (module->getSiteState(siteIndex) == 1) {
 				// translate logical cell location to world space
 				GLfloat transX = c * xInc;
 

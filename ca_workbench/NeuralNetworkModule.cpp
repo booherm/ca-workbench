@@ -136,7 +136,7 @@ void NeuralNetworkModule::iterate()
 
 			// new state is different from the current state, increment the change counter and reset it to a solid color
 			s->stateChangeCount++;
-			s->freshActivation = s->workingState;
+			s->freshActivation = s->workingState == 1;
 
 			if (i >= externalOutputStartCellIndex) {  // external output cells
 				s->color.at(0) = 1.0f;
@@ -207,7 +207,7 @@ void NeuralNetworkModule::iterate()
 	*/
 }
 
-inline bool NeuralNetworkModule::getSiteActive(unsigned int siteId) {
+inline unsigned char NeuralNetworkModule::getSiteState(unsigned int siteId) {
 	return neuronSites[siteId].currentState;
 }
 

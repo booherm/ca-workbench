@@ -75,7 +75,7 @@ void OneDimCaModule::iterate()
 		else if (activeRuleSetNumber == 1) {
 			// R = 4
 			bool pir_n0;
-			pir_n0 = sites[(prevIteration * cols) + i].currentState;
+			pir_n0 = sites[(prevIteration * cols) + i].currentState == 1;
 			if (
 				(pir_n0  && activeRule[0])
 				|| (!pir_n0 && activeRule[1])
@@ -92,8 +92,8 @@ void OneDimCaModule::iterate()
 			bool pir_n1;
 
 			// wrap-around array
-			pir_n0 = sites[(prevIteration * cols) + i].currentState;
-			pir_n1 = (i == cols - 1 ? sites[(prevIteration * cols)].currentState : sites[(prevIteration * cols) + i + 1].currentState);
+			pir_n0 = sites[(prevIteration * cols) + i].currentState == 1;
+			pir_n1 = (i == cols - 1 ? sites[(prevIteration * cols)].currentState == 1 : sites[(prevIteration * cols) + i + 1].currentState == 1);
 
 			if (((pir_n0 &&  pir_n1) && activeRule[0])
 				|| ((pir_n0 &&  !pir_n1) && activeRule[1])
@@ -101,7 +101,7 @@ void OneDimCaModule::iterate()
 				|| ((!pir_n0 && !pir_n1) && activeRule[3])
 				) {
 				Site* thisSite = &sites[(iteration * cols) + i];
-				thisSite->currentState = true;
+				thisSite->currentState = 1;
 				thisSite->stateChangeCount++;
 			}
 		}
@@ -113,9 +113,9 @@ void OneDimCaModule::iterate()
 			bool pir_n2;
 
 			// wrap-around array
-			pir_n0 = (i == 0 ? sites[(prevIteration * cols) + (cols - 1)].currentState : sites[(prevIteration * cols) + i - 1].currentState);
-			pir_n1 = sites[(prevIteration * cols) + i].currentState;
-			pir_n2 = (i == cols - 1 ? sites[(prevIteration * cols)].currentState : sites[(prevIteration * cols) + i + 1].currentState);
+			pir_n0 = (i == 0 ? sites[(prevIteration * cols) + (cols - 1)].currentState == 1 : sites[(prevIteration * cols) + i - 1].currentState == 1);
+			pir_n1 = sites[(prevIteration * cols) + i].currentState == 1;
+			pir_n2 = (i == cols - 1 ? sites[(prevIteration * cols)].currentState == 1: sites[(prevIteration * cols) + i + 1].currentState == 1);
 
 			if (((pir_n0 &&  pir_n1 &&  pir_n2) && activeRule[0])
 				|| ((pir_n0 &&  pir_n1 && !pir_n2) && activeRule[1])
@@ -128,7 +128,7 @@ void OneDimCaModule::iterate()
 				) {
 
 				Site* thisSite = &sites[(iteration * cols) + i];
-				thisSite->currentState = true;
+				thisSite->currentState = 1;
 				thisSite->stateChangeCount++;
 
 			}

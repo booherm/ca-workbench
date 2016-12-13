@@ -26,7 +26,7 @@ public:
 	// public member functions
 	virtual void iterate();
 	virtual void handleInputAction(int action, int key);
-	virtual bool getSiteActive(unsigned int siteId);
+	virtual unsigned char getSiteState(unsigned int siteId);
 	virtual std::vector<float>* getSiteColor(unsigned int siteId);
 	virtual unsigned int getMaxSiteConnectionsCount();
 	virtual std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);

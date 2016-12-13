@@ -190,12 +190,12 @@ bool NeuralNetworkModule::setExternalOutputRowCount(unsigned int rowCount) {
 
 void NeuralNetworkModule::shiftInputData(int offset) {
 	bool t1;
-	bool t2 = neuronSites[externalInputEndCellIndex].currentState;
+	bool t2 = neuronSites[externalInputEndCellIndex].currentState == 1;
 
 	for (unsigned int i = externalInputStartCellIndex; i <= externalInputEndCellIndex; i++) {
 		NeuronSite* s = &neuronSites[i];
-		t1 = s->currentState;
-		s->currentState = t2;
+		t1 = s->currentState == 1;
+		s->currentState = t2 ? 1 : 0;
 		t2 = t1;
 	}
 

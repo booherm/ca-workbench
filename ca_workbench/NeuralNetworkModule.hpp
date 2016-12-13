@@ -21,7 +21,7 @@ public:
 
 	// public logic state member functions
 	void iterate();
-	bool getSiteActive(unsigned int siteId);
+	unsigned char getSiteState(unsigned int siteId);
 	std::vector<float>* getSiteColor(unsigned int siteId);
 	unsigned int getMaxSiteConnectionsCount();
 	std::vector<SiteConnection*>* getSiteConnections(unsigned int siteId);

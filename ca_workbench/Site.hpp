@@ -9,8 +9,8 @@ class Site
 {
 public:
 	unsigned int siteId;
-	bool currentState;
-	bool workingState;
+	unsigned char currentState;
+	unsigned char workingState;
 	std::vector<float> color;
 	unsigned int stateChangeCount;
 	std::vector<SiteConnection*> siteConnections;

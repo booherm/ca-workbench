@@ -2,9 +2,9 @@
 #define CAWORKBENCH_HPP
 
 #include <iostream>
-#include "AudioManager.hpp"
 #include "CaWorkbenchRenderWindow.hpp"
 #include "OneDimCaModule.hpp"
+#include "TwoDimCaModule.hpp"
 #include "RandomBooleanNetworkModule.hpp"
 #include "NeuralNetworkModule.hpp"
 #include "CaWorkbenchControlUi.hpp"

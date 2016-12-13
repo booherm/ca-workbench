@@ -94,7 +94,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32.lib;external\glfw-3.1.2\glfw3dll.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32.lib;external\glfw-3.1.2\glfw3dll.lib;external\soil-1.16\lib\SOIL.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-gd-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>
@@ -133,7 +133,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32.lib;external\glfw-3.1.2\glfw3dll.lib;external\soil-1.16\lib\SOIL.lib;external\portaudio\build\msvc\Win32\Release\portaudio_x86.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;external\glew-1.13.0\lib\Release\Win32\glew32.lib;external\glfw-3.1.2\glfw3dll.lib;external\soil-1.16\lib\SOIL.lib;external\awesomium-1.7.5.1\lib\awesomium.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_thread-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_date_time-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_system-vc140-mt-1_60.lib;external\boost_1_60_0\lib32-msvc-14.0\libboost_chrono-vc140-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -167,7 +167,6 @@
     <ClCompile Include="NeuralNetworkModuleConfig.cpp" />
     <ClCompile Include="NeuralSynapse.cpp" />
     <ClCompile Include="OneDimCaModule.cpp" />
-    <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="CaWorkbench.cpp" />
     <ClCompile Include="CaWorkbenchModule.cpp" />
     <ClCompile Include="main.cpp" />
@@ -175,10 +174,10 @@
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="RandomBooleanNetworkModule.cpp" />
     <ClCompile Include="SiteConnection.cpp" />
+    <ClCompile Include="TwoDimCaModule.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="AwesomiumJsDelegate.hpp" />
     <ClInclude Include="AwesomiumMessageDispatcher.hpp" />
     <ClInclude Include="AwesomiumUiWindow.hpp" />
@@ -198,6 +197,7 @@
     <ClInclude Include="RandomBooleanNetworkSite.hpp" />
     <ClInclude Include="Site.hpp" />
     <ClInclude Include="SiteConnection.hpp" />
+    <ClInclude Include="TwoDimCaModule.hpp" />
     <ClInclude Include="Util.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

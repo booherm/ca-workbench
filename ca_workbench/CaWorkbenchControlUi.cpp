@@ -14,19 +14,22 @@ void CaWorkbenchControlUi::onWindowDestroy() {
 void CaWorkbenchControlUi::refreshModuleConfig(WebView* caller, const JSArray& args) {
 	Json::Value configJson(Json::objectValue);
 	module->getConfigJson(configJson);
-	executeJs("CawbUi.refreshModuleConfigCallback(" + configJson.toStyledString() + ");");
+	std::string callbackJsFunction = ToString(args.At(0).ToString());
+	executeJs(callbackJsFunction + "(" + configJson.toStyledString() + ");");
 }
 
 void CaWorkbenchControlUi::refreshModuleState(WebView* caller, const JSArray& args) {
 	Json::Value stateJson(Json::objectValue);
 	module->getStateJson(stateJson);
-	executeJs("CawbUi.refreshModuleStateCallback(" + stateJson.toStyledString() + ");");
+	std::string callbackJsFunction = ToString(args.At(0).ToString());
+	executeJs(callbackJsFunction + "(" + stateJson.toStyledString() + ");");
 }
 
 void CaWorkbenchControlUi::refreshRenderWindowState(WebView* caller, const JSArray& args) {
 	Json::Value stateJson(Json::objectValue);
 	renderWindow->getStateJson(stateJson);
-	executeJs("CawbUi.refreshRenderWindowStateCallback(" + stateJson.toStyledString() + ");");
+	std::string callbackJsFunction = ToString(args.At(0).ToString());
+	executeJs(callbackJsFunction + "(" + stateJson.toStyledString() + ");");
 }
 
 void CaWorkbenchControlUi::setModuleConfigValue(WebView* caller, const JSArray& args) {
@@ -34,14 +37,17 @@ void CaWorkbenchControlUi::setModuleConfigValue(WebView* caller, const JSArray& 
 	newSetting.key = ToString(args.At(0).ToString());
 	newSetting.value = ToString(args.At(1).ToString());
 
-	cout << "module config, key = " << newSetting.key << " value = " << newSetting.value << endl;
 	module->enqueueConfigChange(newSetting);
 }
 
 void CaWorkbenchControlUi::sendRenderWindowCommand(WebView* caller, const JSArray& args) {
 	std::string command = ToString(args.At(0).ToString());
 	renderWindow->handleInputCommand(command);
-	refreshRenderWindowState(caller, args);
+
+	Json::Value stateJson(Json::objectValue);
+	renderWindow->getStateJson(stateJson);
+	std::string callbackJsFunction = ToString(args.At(1).ToString());
+	executeJs(callbackJsFunction + "(" + stateJson.toStyledString() + ");");
 }
 
 void CaWorkbenchControlUi::bindJsFunctions() {

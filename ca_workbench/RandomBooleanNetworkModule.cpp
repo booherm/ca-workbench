@@ -70,12 +70,12 @@ void RandomBooleanNetworkModule::updateInputSites()
 
 void RandomBooleanNetworkModule::shiftInputData(int offset) {
 	bool t1;
-	bool t2 = sites[externalInputEndCellIndex].currentState;
+	bool t2 = sites[externalInputEndCellIndex].currentState == 1;
 
 	for (unsigned int i = externalInputStartCellIndex; i <= externalInputEndCellIndex; i++) {
 		RandomBooleanNetworkSite* s = &sites[i];
-		t1 = s->currentState;
-		s->currentState = t2;
+		t1 = s->currentState == 1;
+		s->currentState = t2 == 1;
 		t2 = t1;
 	}
 
@@ -141,7 +141,7 @@ void RandomBooleanNetworkModule::resetCellStates()
 			s.color[0] = 0.0f;
 			s.color[1] = 0.0f;
 			s.color[2] = 0.0f;
-			s.freshActivation = s.currentState;
+			s.freshActivation = s.currentState == 1;
 		}
 
 		sites[i] = s;
@@ -371,7 +371,7 @@ void RandomBooleanNetworkModule::iterate()
 		vector<SiteConnection*>* inputSiteConnections = (vector<SiteConnection*>*) &s->siteConnections;
 
 		for (unsigned int inputSiteIndex = 0; inputSiteIndex < connectivity; inputSiteIndex++) {
-			bool inputSiteValue = sites[inputSiteConnections->at(inputSiteIndex)->sourceSiteId].currentState;
+			bool inputSiteValue = sites[inputSiteConnections->at(inputSiteIndex)->sourceSiteId].currentState == 1;
 			if (inputSiteValue)
 				inputValue = inputValue | ((char) 1 << inputSiteIndex);
 		}
@@ -396,7 +396,7 @@ void RandomBooleanNetworkModule::iterate()
 
 			// new state is different from the current state, increment the change counter and reset it to a solid color
 			s->stateChangeCount++;
-			s->freshActivation = s->workingState;
+			s->freshActivation = s->workingState == 1;
 
 			if (i >= externalOutputStartCellIndex) {  // external output cells
 				s->color.at(0) = 1.0f;
@@ -616,7 +616,7 @@ void RandomBooleanNetworkModule::toggleFadeInactiveSites() {
 	fadeInactiveSites = !fadeInactiveSites;
 }
 
-inline bool RandomBooleanNetworkModule::getSiteActive(unsigned int siteId) {
+inline unsigned char RandomBooleanNetworkModule::getSiteState(unsigned int siteId) {
 	return sites[siteId].currentState;
 }
 
