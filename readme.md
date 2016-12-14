@@ -1,7 +1,7 @@
 # CA Workbench
 
-CA Workbench is a utility for exploring computational complexity through networks of connected agents.  Such models include Cellular Automata (CA),
-Random Boolean Networks (RBNs), and Recurrent Neural Networks (RNNs).
+CA Workbench is a utility for exploring computational complexity and emergent phenomena in dynamical systems through networks of connected agents.
+Such models include Cellular Automata (CA), Random Boolean Networks (RBNs), and Recurrent Neural Networks (RNNs).
 
 ## One Dimensional CA Module
 [Math World: 1D Cellular Automata](http://mathworld.wolfram.com/ElementaryCellularAutomaton.html)
@@ -30,9 +30,12 @@ Rule 45:
 ## Two Dimensional CA Module
 [Wikipedia: Cellular automaton](https://en.wikipedia.org/wiki/Cellular_automaton)
 
-The extension of 1D CA, 2D CA update the entire lattice of cells on each time step, which can be viewed as a movie.
+The extension of 1D CA, 2D CA update a two dimensional lattice of sites on each time step, the sequence of which can be viewed as a movie.  The rule space for 2D CAs is vast.
+For a 2 state system using a Moore neighborhood (above, below, left, right, self), there are 2^(2^9) possible rules: ~1.34 x 10^154.  Some rules are known to be Turing complete,
+such as the famous [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).  That is, specific initial conditions can be set such that any computable task
+can be calculated given enough space (lattice) and time (iterations).  What rules are Turing complete and what do they have in common to make them so?
 
-
+"Crystalization" 2D CA 01101101101101101111101011001000:
 [![2D CA](http://i.imgur.com/t5ieSWu.png)](https://youtu.be/9Z-a_6BgTa8?t=0s "2D CA")
 
 
@@ -68,3 +71,9 @@ A UI has not yet been added for this module.  Keyboard controls:
 [Wikipedia: Recurrent Neural Network](https://en.wikipedia.org/wiki/Recurrent_neural_network)
 
 Recurrent Neural Network as described by John Holland in "Emergence: From Chaos to Order", 1998
+
+Controller:
+![Recurrent Neural Network Controller](http://i.imgur.com/JA3eXQv.png)
+
+Output:
+[![RNN](http://i.imgur.com/KGHHxdK.png)](https://youtu.be/2PlwaRqSw4c?t=0s "RNN")
